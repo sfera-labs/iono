@@ -31,6 +31,10 @@ void IonoWebClass::setDefaultCommand(WebServer::Command *cmd) {
   _webServer.setDefaultCommand(cmd);
 }
 
+void IonoWebClass::addCommand(const char *verb, WebServer::Command *cmd) {
+  _webServer.addCommand(verb, cmd);
+}
+
 void IonoWebClass::jsonStateCommand(WebServer &webServer, WebServer::ConnectionType type, char* urlTail, bool tailComplete) {
   webServer.httpSuccess("application/json");
   webServer.print("{");
