@@ -315,7 +315,7 @@ void setup() {
 void loop() {
   // Process incoming requests
   IonoWeb.processRequest();
-  // Check all the inputs - needed for subscribe
+  // Check all the inputs
   Iono.process();
 }
 
