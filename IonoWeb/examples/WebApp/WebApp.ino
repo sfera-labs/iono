@@ -191,37 +191,53 @@ void setField(byte *ip, char *value, char sep, int base) {
 }
 
 void setup() {
-  byte checksum = 7;
-  int a = 0;
-  for (; a < 4; a++) {
-    ip[a] = EEPROM.read(a);
-    checksum ^= ip[a];
+  pinMode(0, INPUT);
+  pinMode(1, OUTPUT);
+  boolean reset = true;
+  for (int i = 0; i < 5; i++) {
+    digitalWrite(1, i % 2);
+    if (digitalRead(0) != i % 2) {
+      reset = false;
+    }
   }
-  for (; a < 8; a++) {
-    dnsa[a - 4] = EEPROM.read(a);
-    checksum ^= dnsa[a - 4];
-  }
-  for (; a < 12; a++) {
-    gateway[a - 8] = EEPROM.read(a);
-    checksum ^= gateway[a - 8];
-  }
-  for (; a < 16; a++) {
-    subnet[a - 12] = EEPROM.read(a);
-    checksum ^= subnet[a - 12];
-  }
-  for (; a < 22; a++) {
-    mac[a - 16] = EEPROM.read(a);
-    checksum ^= mac[a - 16];
-  }
-  for (; a < 38; a+=2) {
-    byte l = EEPROM.read(a);
-    byte h = EEPROM.read(a + 1);
-    pwd[(a - 22) / 2] = (h << 8) + l;
-    checksum ^= l;
-    checksum ^= h;
+
+  if (!reset) {
+    byte checksum = 7;
+    int a = 0;
+    for (; a < 4; a++) {
+      ip[a] = EEPROM.read(a);
+      checksum ^= ip[a];
+    }
+    for (; a < 8; a++) {
+      dnsa[a - 4] = EEPROM.read(a);
+      checksum ^= dnsa[a - 4];
+    }
+    for (; a < 12; a++) {
+      gateway[a - 8] = EEPROM.read(a);
+      checksum ^= gateway[a - 8];
+    }
+    for (; a < 16; a++) {
+      subnet[a - 12] = EEPROM.read(a);
+      checksum ^= subnet[a - 12];
+    }
+    for (; a < 22; a++) {
+      mac[a - 16] = EEPROM.read(a);
+      checksum ^= mac[a - 16];
+    }
+    for (; a < 38; a+=2) {
+      byte l = EEPROM.read(a);
+      byte h = EEPROM.read(a + 1);
+      pwd[(a - 22) / 2] = (h << 8) + l;
+      checksum ^= l;
+      checksum ^= h;
+    }
+    
+    if (EEPROM.read(a) != checksum) {
+      reset = true;
+    }
   }
   
-  if (EEPROM.read(a) != checksum) {
+  if (reset) {
     ip[0] = 192;
     ip[1] = 168;
     ip[2] = 0;
