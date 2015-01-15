@@ -1,5 +1,5 @@
 /*
-  API.ino - Arduino sketch implementing a Web application to control, monitor and configure iono
+  WebApp.ino - Arduino sketch implementing a Web application to control, monitor and configure iono
 
     Copyright (C) 2014-2015 Sfera Labs, a division of Home Systems Consulting S.p.A. - All rights reserved.
 
