@@ -271,8 +271,9 @@ void setup() {
   Ethernet.begin(mac, ip, dnsa, gateway, subnet);
   
   IonoWeb.begin(80);
-  IonoWeb.setDefaultCommand(&webPageCmd);
-  IonoWeb.addCommand("config", &configCmd);
+  WebServer &webServer = IonoWeb.getWebServer();
+  webServer.setDefaultCommand(&webPageCmd);
+  webServer.addCommand("config", &configCmd);
 }
 
 void loop() {
