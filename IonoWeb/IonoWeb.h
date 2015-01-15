@@ -16,10 +16,9 @@ class IonoWebClass
   public:
     static void begin(int port);
     static void processRequest();
-    static void setDefaultCommand(WebServer::Command *cmd);
-    static void addCommand(const char *verb, WebServer::Command *cmd);
     static void subscribeDigital(int pin, unsigned long stableTime, char *host, int port, char *command);
     static void subscribeAnalog(int pin, unsigned long stableTime, float minVariation, char *host, int port, char *command);
+    static WebServer& getWebServer();
 
   private:
     static WebServer _webServer;

@@ -27,12 +27,8 @@ void IonoWebClass::processRequest() {
   _webServer.processConnection(buff, &len);
 }
 
-void IonoWebClass::setDefaultCommand(WebServer::Command *cmd) {
-  _webServer.setDefaultCommand(cmd);
-}
-
-void IonoWebClass::addCommand(const char *verb, WebServer::Command *cmd) {
-  _webServer.addCommand(verb, cmd);
+WebServer& IonoWebClass::getWebServer() {
+  return _webServer;
 }
 
 void IonoWebClass::jsonStateCommand(WebServer &webServer, WebServer::ConnectionType type, char* urlTail, bool tailComplete) {
