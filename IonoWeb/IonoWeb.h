@@ -20,9 +20,6 @@ class IonoWebClass
     static void addCommand(const char *verb, WebServer::Command *cmd);
     static void subscribeDigital(int pin, unsigned long stableTime, char *host, int port, char *command);
     static void subscribeAnalog(int pin, unsigned long stableTime, float minVariation, char *host, int port, char *command);
-    static void subscribeCommand(WebServer &webServer, WebServer::ConnectionType type, char* urlTail, bool tailComplete);
-    static void setCommand(WebServer &webServer, WebServer::ConnectionType type, char* urlTail, bool tailComplete);
-    static void jsonStateCommand(WebServer &webServer, WebServer::ConnectionType type, char* urlTail, bool tailComplete);
 
   private:
     static WebServer _webServer;
@@ -40,6 +37,9 @@ class IonoWebClass
     static HttpURL _url5;
     static HttpURL _url6;
 
+    static void setCommand(WebServer &webServer, WebServer::ConnectionType type, char* urlTail, bool tailComplete);
+    static void jsonStateCommand(WebServer &webServer, WebServer::ConnectionType type, char* urlTail, bool tailComplete);
+    static void subscribeCommand(WebServer &webServer, WebServer::ConnectionType type, char* urlTail, bool tailComplete);
     static void callDigitalURL(int pin, float value);
     static void callAnalogURL(int pin, float value);
     static void callURL(HttpURL *url, const char *pin, const char *value);
