@@ -1,0 +1,584 @@
+<html>
+<head>
+	<meta http-equiv="Pragma" content="no-cache">
+	<meta http-equiv="Expires" content="-1">	
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>iono</title>
+	<style>
+		* {
+		    -webkit-user-select: none;
+		    -khtml-user-select: none;
+		    -moz-user-select: -moz-none;
+		    -o-user-select: none;
+		    user-select: none;
+		}
+		
+		input, .sts div {
+		    -webkit-user-select: text;
+		    -khtml-user-select: text;
+		    -moz-user-select: text;
+		    -o-user-select: text;
+		    user-select: text;
+		}	
+	
+		body {
+			text-align: center;
+			font: 16px helvetica, arial, sans-serif;
+			margin: 0;
+			padding: 0;
+			background: #336699;
+		}
+		
+		.l {float: left;}
+		.r {float: right;}
+		.a {position: absolute;}
+		
+		input {
+			-webkit-appearance: none;
+			-webkit-text-size-adjust: none;
+			height:23px;
+		}
+		.cont {
+			width: 100%;
+		}
+		.body {
+			width: 280px;
+			margin: 0 auto;
+		}
+		.bg {
+			width: 100%;
+			height: 100%;
+			overflow: hidden;
+		}
+		.swi {
+			margin: 5px;
+		}
+		.swi.m {
+			margin: 5px 24px;
+		}
+		.swi input {
+			position: absolute;
+			margin-left: -9999px;
+			visibility: hidden;
+		}
+		.swi label {
+			display: block;
+			position: relative;
+			outline: none;
+			padding: 2px;
+			width: 60px;
+			height: 30px;
+			background: #889;
+			border-radius: 15px;
+		}
+		.swi label:before,
+		.swi label:after {
+			position: absolute;
+			content: '';
+		}
+		.swi label:before {
+			top: 2px;
+			left: 2px;
+			bottom: 2px;
+			right: 2px;
+			background: #fff;
+			border-radius: 14px;
+		}
+		.swi label:after {
+			transition: all 0.2s;
+			top: 4px;
+			left: 4px;
+			bottom: 4px;
+			width: 26px;
+			background: #bbbcc4;
+			border-radius: 14px;
+		}
+		.swi input:checked + label:after {
+			margin-left: 30px;
+			background: #60c186;
+		}
+		hr,
+		br {
+			clear: both;
+		}
+		.err {
+			color: #fff;
+			margin: 9px;
+			display: none;
+		}
+		.sts .t {
+			color: #778;
+			padding-bottom: 5px;
+		}
+		.sts .e {
+			width:74px;
+		}
+		.sts .i {
+			width: 40px;
+			text-align: center;
+		}
+		.sts div {
+			float: left;
+			width: 68px;
+			text-align: right;
+		}
+		.title {
+			margin-top: 30px;
+			margin-bottom: 5px;
+			height:25px;
+		}
+		.title img {
+			float:left;
+			margin-left:97px;
+		}
+		.p {
+			margin: 20px auto 0 auto;
+			padding: 10px;
+			background: rgba(240, 240, 250, 0.8);
+			border-radius: 5px;
+			display: none;
+		}
+		.p input {
+			font-size: 14px;
+			border:2px solid #889;
+			border-radius: 3px;
+		}
+		.line {
+			margin-bottom: 25px;
+		}
+		.line label {
+			float: right;
+			text-align: right;
+			margin: 3px 5px 20px 0;
+		}
+		.line input {
+			float: right;
+			width:155px;
+		}
+		.line.spa {
+			margin-bottom: 32px;
+		}
+		.bt {
+			width: 70px;
+			background: #eeeef7;
+			background: linear-gradient(#fff, #dde);
+			border: #889 1px solid;
+			border-radius: 4px;
+			padding: 7px 5px;
+			cursor: default;
+		}
+		.bt:hover {
+			background: #fff;
+		}
+		.bt:active {
+			background: #dde;
+		}
+		.bt.c {
+			width: 50px;
+		}
+		#cb {
+			display: none;
+			width: 20px;
+			padding: 2px 5px;
+		}
+		#cb > div {
+			width: 20px;
+			height: 3px;
+			background: #778;
+			margin: 4px 0px;
+			border-radius: 1px;
+		}
+		.ao {
+			margin-top: 7px;
+			margin-bottom:4px;
+		}
+		#AO1 {
+			width: 117px;
+		}
+		body {
+			animation-name: cycle; 
+			animation-duration:120s; 
+			animation-direction:alternate; 
+			animation-iteration-count:infinite; 
+			
+			-webkit-animation-name: cycle; 
+			-webkit-animation-duration:120s; 
+			-webkit-animation-direction:alternate; 
+			-webkit-animation-iteration-count:infinite;
+		}	
+
+		@keyframes cycle {
+			0% {background-color:#336699;} 
+			20% {background-color:#336699;} 
+			55% {background-color:#574582;} 
+			70% {background-color:#458265;} 
+			85% {background-color:#82455b;} 
+		} 
+		
+		@-webkit-keyframes cycle {
+			0% {background-color:#336699;} 
+			20% {background-color:#336699;} 
+			55% {background-color:#574582;} 
+			70% {background-color:#458265;} 
+			85% {background-color:#82455b;} 
+		} 
+	</style>
+
+	<script>
+		var tid, tip, tie, // timeout draw, timeout poll, timeout error
+			cg, // config, start empty
+			iv, cv, // interface visible (logged in or no pw), configuration panel visible
+			as, // ao value to send
+			fc = 0, // status fail count, show error at >3
+			bl = false, // blocked when changing parameters
+			lip = '', // last ip set, to reload
+			x1 = new x(), // status poll
+			x2 = new x(), // config
+			x3 = new x(); // d01,d02, a01
+
+		function x() {
+			var s = this;
+			s.r = new XMLHttpRequest();
+			s.r.onload = function() {
+				if (s.r.readyState !== 4) return;
+				if (s.r.status === 200) s.o();
+				else s.e();
+			}
+			s.r.onerror = function() {
+				s.e();
+			}
+		}
+
+		// get element by id shortcut
+		function $(n) {
+			return document.getElementById(n);
+		}
+
+		// random
+		function r(n) {
+			return Math.floor(Math.random() * n)
+		}
+
+		// distance between two points
+		function d(x, y, j, l) {
+			var xs = j - x;
+			var ys = l - y;
+			return Math.sqrt(ys * ys + xs * xs);
+		}
+
+		function start() {
+			dr();
+			
+			// common pieces
+			var i=0,a,
+				b='<div class=\'',
+				d='\' id=\'I';
+				m='\'>',
+				e='</div>',
+				z='<br>';
+				
+			// switches
+			for (i=1;i<7;i++)
+				$('sw').innerHTML += 
+				b+'swi l '+'  m  m  '[i]+'\'><input id=\'DO'+i+'\' type=\'checkbox\' onclick=\'set()\'><label for=\'DO'+i+'\'></label>DO'+i+e;
+
+			// states
+			for (i=0;i<7;i++) {
+				var t=(i?'':'t'),
+					bb=b+t+d+i+'.';
+				$('sts').innerHTML += b+'i '+t+m+(i?i:'input')+e+ //<div class='i t'>input</div> || <div class='i'>1</div>
+				bb+'D'+m+(i?'?':'D')+e+ //<div class='t'>D</div> || <div id='I1.D'>?</div>
+				(i<5?
+				bb+'V'+m+(i?'?':'V')+e+ //<div class='t'>V</div> || <div id='I1.V'>?</div> 
+				b+t+(i?'':' e')+d+i+'.I'+m+(i?'?':'I (mA)')+e:'')+ // //<div class='t e'>I (mA)</div> || <div id='I1.I'>?</div>
+				z;
+			}
+			
+			// configuration page
+			for (i=0;i<6;i++) {
+				d='\''+'idgsmp'[i]+'\''; 
+				$('cf').innerHTML += b+'line'+(i>4?' spa':'')+m+ //<div class='line[ spa]'>
+					'<input id='+d+' name='+d+(i>4?' type=\'password\'':'')+'>'+ // <input id='i' name='i'[ type='password']>
+					'<label for='+d+'>'+['IP','DNS','Gateway','Subnet','MAC','Password'][i]+' : </label>'+ // <label for='i'>IP : </label>
+					e+z; // </div>
+			}
+			$('cf').innerHTML += z+b+'bt l\' onclick=\'cf()\'>cancel'+e+b+'bt r\' onclick=\'save()\'>save'+e+z;
+			
+			// first poll for config
+			poll(1);
+		}
+
+		// draw background
+		function dr() {
+			var w = window.innerWidth,
+				h = window.innerHeight,
+				p = [], // points
+				n = 0,
+				q = 200, // 1 point every nxn square
+				x, y, j, l, t, i, 
+				o, g, c;
+
+			try {
+				g = $('c');
+				c = g.getContext('2d');
+				o = (typeof g.style.opacity !== 'undefined');
+				if (o) g.style.opacity = .3;
+			} catch (e) {
+				return
+			}
+			
+			c.canvas.width = w;
+			c.canvas.height = h;
+
+			for (x = -1; x <= w / q; x++) {
+				for (y = -1; y <= h / q; y++) {
+					p.push(q * x + r(q), q * y + r(q));
+					n++;
+				}
+			}
+			c.strokeStyle =
+			c.fillStyle = o?'#fff':'#7194b8';//'#7998af';
+			for (i = 0; i < n; i++) {
+				x = p[i * 2];
+				y = p[i * 2 + 1];
+				for (t = i + 1; t < n; t++) {
+					j = p[t * 2];
+					l = p[t * 2 + 1];
+					c.moveTo(x, y);
+					if (d(x, y, j, l) < q * 2) {
+						c.lineTo(j, l);
+					}
+				}
+				c.stroke();
+				c.beginPath();
+				c.arc(x, y, r(10) + 4, 0, 2 * Math.PI, false);
+				c.fill();
+			}
+		}
+		
+		// call draw on resize, after 100ms
+		window.onresize = function() {
+			clearTimeout(tid);
+			tid = setTimeout(dr, 100);
+		}
+
+		// show error for n seconds (default 5s, 0:stay), f: full text
+		function err(w,f,n) {
+			if (tie)
+				clearTimeout(tie);
+			var e = $('err');
+			if (w) {
+				if (n !== 0)
+					tie = setTimeout(err, n?n:5000);
+				e.innerHTML = f?w:'error ('+w+')';
+			}
+			e.style.display = w?'block':'none';
+		}
+
+		// request
+		function req(i, u) {
+			if (bl) return; // no more requests
+			//console.log("req: "+u);			
+			var a = window['x' + i].r;
+			//u = 'http://192.168.1.243'+u;
+			a.open('GET', u+"&"+new Date().getTime()+"=", true);
+			a.send(null);
+		}
+		
+		// stop poll
+		function stop() {
+			if (tip) clearTimeout(tip);
+		}
+		
+		// poll. now or wait?
+		function poll(n) {
+			//console.log("next state req in "+(n ? 100 : 1000)+"ms");
+			stop();
+			tip = setTimeout(function() {
+				//console.log("state req now");
+				req(1, cg?'/api/state?':'/config?')
+			}, n ? 10 : 1000);
+		}
+		
+		function pass() {
+			if ($('pw').value == cg.p) {
+				iv = true;
+				uv();
+				err();
+				poll(1);
+			} else {
+				err('wrong password',true);
+			}
+		}
+
+		// save configuration
+		function save() {
+			var e = 'Please enter a valid ',
+				r = '/?',
+				l,
+				f;
+
+			for (t=0;t<6;t++) {
+				l = 'idgsmp'[t];
+				f = $(l);
+				if (t<5?
+					(!f.value || !f.value.match(t<3?/\d\d?\d?\.\d\d?\d?\.\d\d?\d?\.\d\d?\d?/:
+					 	t<4?/^((128|192|224|240|248|252|254)\.0\.0\.0)|(255\.(((0|128|192|224|240|248|252|254)\.0\.0)|(255\.(((0|128|192|224|240|248|252|254)\.0)|255\.(0|128|192|224|240|248|252|254)))))$/:
+						/^([0-9a-f]{1,2}[\.:-]){5}([0-9a-f]{1,2})$/i
+					)):(f.value && (f.value.length<3 || !f.value.match(/^[0-9a-z]+$/i)))) {
+					alert(e + ['IP','DNS','gateway','subnet','MAC address','password (minimum 3 characters, letters and digits only)'][t]);
+					f.focus();
+					return false;
+				}
+				r += l+'='+f.value+'&';
+			}
+			
+			lip = $('i').value;
+			req(2, r);
+			bl = true; // no more requests
+		}
+
+		// update view
+		function uv() {
+			for (var i=0;i<4;i++)
+				$(['ps','cb','vw','cf'][i]).style.display = 
+				[!iv ? 'block' : 'none', iv ? 'block' : 'none', cv || !iv ? 'none' : 'block', !cv || !iv ? 'none' : 'block'][i];				
+		}
+
+		function set(a) {
+			if (a) {
+				as = $('AO1').value;
+				$('AO1').value = "";
+			}
+			poll(); // reset poll
+			var i,r = '/api/set?';
+			for (i=1; i<=6; i++)
+				r += 'DO'+i+'='+($('DO'+i).checked?'1':'0')+'&';
+				
+			req(3, r+(as?('AO1=' + as):''));
+		}
+
+		function cf() {
+			cv = !cv;
+			uv();
+		}
+		// x1: status poll
+		x1.o = function() {
+			//console.log("x1 loaded: "+x1.r.responseText);
+			fc = 0;
+			var i,t,
+				j = JSON.parse(x1.r.responseText);
+			if (cg) {
+				for (i in j) {
+					if (i[0] == 'D')
+						$(i).checked = j[i] == '1';
+					else
+						for (t in j[i])
+							$(i + '.' + t).innerHTML = j[i][t];
+				}
+			} else {
+				cg = j;
+				for (i in j)
+					$(i).value = j[i];
+				
+				iv = j.p?false:true;
+				uv();
+				if (iv) poll(1);
+				return;	
+			}
+			poll();
+		}
+		x1.e = function() {
+			fc++;
+			//console.log("x1 error: "+fc);
+			if (fc>2)
+				err('x1'); // x1.statusText
+			poll();
+			/*
+			var uh = '{"DO1":0,"DO2":0,"DO3":0,"DO4":0,"DO5":0,"DO6":0,"I1":{"D":0,"V":0.00,"I":0.00},"I2":{"D":0,"V":0.30,"I":0.61},"I3":{"D":0,"V":0.00,"I":0.00},"I4":{"D":0,"V":0.00,"I":0.00},"I5":{"D":0},"I6":{"D":0}}';
+			var state = JSON.parse(uh);
+			for (var i in state) {
+			    if (i[0] == 'D')
+			        $(i).checked = state[i] == "1";
+			    else
+			        for (var t in state[i])
+			            $(i + "." + t).innerHTML = state[i][t];
+			}
+			*/
+		}
+
+		// x2: config form
+		x2.o = function(e) {
+			//console.log("x2 loaded");
+			stop();
+			$('cf').style.display = 'none';
+			$('vw').style.display = 'none';
+			$('sv').style.display = 'block';
+			
+			setInterval(function(){
+				window.location = 'http://'+lip;
+				//console.log("reload to location:"+lip)
+				},2000);
+		}
+		x2.e = function() {
+			//console.log("x2 error");
+			err('x2');
+			bl = false; // resume requests
+			poll(1);
+		}
+		
+		x3.o = function() {
+			as = '';
+		}
+		x3.e = set;
+	</script>
+</head>
+
+<body onload='start()'>
+	<div class='bg a'>
+		<canvas id='c'></canvas>
+	</div>
+	<div class='cont a'>
+		<div class='body' align='center'>
+			<div class='title'>
+				<img src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFMAAAAYCAMAAACx8zGdAAAAilBMVEUAAAD////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////2N2iNAAAALXRSTlMAyfr+1L+CCQ/w6M/0pHZiPN25bjIfFrF+aVdLGwPj2MWbljeQUkArqltGiiaSsGwxAAACbElEQVQ4y4VU66KyIBAExDDvmll5SzuVduH9X+9jRQ3Ic775E4zLsDu7hDpy5hFaRx6mtKHpiYl15LYY4xZ7AvhQqmE/F/EpPb4Xwuacb1YV75TPwBnacA1kOfPyZ66JFM3jimIdaBpZxA3QCsJiV+Xw/i9Nx9MVdg9uYpshZN5EfpBAX97L6lsTc0AaPuMyhGtPBezd4zOO7/EzxOMO/ciar0UcR8EW1n6PfsNYeJLNzjaTJhASO9gOGVeqZOKQxT20Dnm//dkz/wW1dwsxVf0U0soIhFw2nOVOzkzNFHqgzcANEgtV6gLX7vnO5FyGBu4Dr8EBawqd24Cp30GRI6eklmQiuAdKV/pewligL03j7k4wFzRpTeFX4eiADlNN5vnuv5onxXMrUbNJVzSD6W2xA7Ztm3brmnfBnGGxx55FWtrD0gJuLU/gjpNlc7eOpp8og7mH9vZ8BIx7TkATHDDfezs7Ve0F3tWce6R30uec5HJNmk/u3ujKYPwdkdEpDQzedalzVFDxpJnMrlv8MDpgvbVY+bSfGhdBoY6u+RLcYfJhepKedKgV0qkaWomazERZI5gr0nGDsJs5HFsHvhjhmEsECjfIJhiwBekrNRbw4DvZZUsI1BP/BpfImGrqzJl7sH0hEzHQ/pLpESQbNvbvDKLupXTq/DEQiOtqCj/brsjrqghGDqNvhBzQhj1j8YaC5NyGvTvuONkSPsKuUQ99VjnK0ApeXMKHwjR7c5uruI4c1rgArSMiapSrWv5wF57O/Gn7ib2h31ClSxQxByO7eOfk3G4qtQcBTZrEu2ToLzg7+5wk9FDMbf4H4gF6cimR9uwAAAAASUVORK5CYII='>
+				<div id='cb' class='bt r' onclick='cf()'>
+					<div></div>
+					<div></div>
+					<div></div>
+				</div>
+			</div>
+			<div id='sv' class='p'>
+				Saving configuration, please wait... 
+			</div>
+			<div id='ps' class='p'>
+				<div class='line'>
+					<input id='pw' name='pw' maxlength='8' type='password' onkeypress='{if (event.keyCode==13)pass()}'>
+					<label for='pw'>Password : </label>
+				</div>
+				<br>
+				<div class='bt r' onclick='pass()'>ok</div>
+				<br>
+			</div>
+			<div id='cf' class='p'>
+			</div>
+			<div id='vw' class='p' align='center'>
+				<div id='sw'>
+				</div>
+				<hr />
+				<div id='sts' class='sts'>
+				</div>
+				<hr />
+				<div class='ao l'>
+					<label for='AO1'>AO1 : </label>
+					<input id='AO1' name='AO1' onkeypress='{if (event.keyCode==13)set(1)}'>&nbsp;V
+				</div>
+				<div class='bt c r' onclick='set(1)'>set</div>
+				<br>
+			</div>
+			<div id='err' class='err r'></div>
+		</div>
+	</div>
+</body>
+
+</html>
