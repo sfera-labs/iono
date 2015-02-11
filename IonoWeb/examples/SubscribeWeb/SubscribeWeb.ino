@@ -1,5 +1,5 @@
 /*
-  Subscribe.ino - Arduino sketch showing the use of the IonoWeb library 
+  SubscribeWeb.ino - Arduino sketch showing the use of the IonoWeb library 
 
     Copyright (C) 2014-2015 Sfera Labs, a division of Home Systems Consulting S.p.A. - All rights reserved.
 
