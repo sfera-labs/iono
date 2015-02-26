@@ -1,5 +1,7 @@
 # Iono - Arduino libraries
 
+![iono](https://www.iono.cc/app/uploads/2015/02/logo.png)
+
 This repository contains Arduino libraries to be used with [iono](http://www.iono.cc/).  
 
 iono is a general-purpose, professional input/output module based on a standard Arduino microcontroller.  
