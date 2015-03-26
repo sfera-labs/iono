@@ -23,8 +23,8 @@
 /     current state of Iono's inputs and outputs
 /
 / http://192.168.1.243/api/set?DO1=1&DO2=1&AO1=5.30
-/     turns on relay DO1 and DO2 and sets a
-/     5.30V voltage on the analog autput AO1
+/     switches on relay DO1 and DO2 and sets a
+/     5.30V voltage on analog autput AO1
 /
 / http://192.168.1.243/api/subscribe?mv=0.1&st=100&host=192.168.1.242&port=8080&cmd=/bar&mode1=d&mode2=d&mode3=v&mode4=i
 /     Every time a pin changes value
