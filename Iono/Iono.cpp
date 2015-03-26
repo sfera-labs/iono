@@ -60,7 +60,7 @@ IonoClass::IonoClass() {
   pinMode(_pinMap[AO1], OUTPUT);
 }
 
-void IonoClass::subscribeDigital(int pin, unsigned long stableTime, Callback *callback) {
+void IonoClass::subscribeDigital(uint8_t pin, unsigned long stableTime, Callback *callback) {
   CallbackMap* input;
 
   switch (pin) {
@@ -125,7 +125,7 @@ void IonoClass::subscribeDigital(int pin, unsigned long stableTime, Callback *ca
   (*input).lastTS = 0;
 }
 
-void IonoClass::subscribeAnalog(int pin, unsigned long stableTime, float minVariation, Callback *callback) {
+void IonoClass::subscribeAnalog(uint8_t pin, unsigned long stableTime, float minVariation, Callback *callback) {
   CallbackMap* input;
 
   switch (pin) {
@@ -201,7 +201,7 @@ void IonoClass::check(CallbackMap *input) {
   }
 }
 
-float IonoClass::read(int pin) {
+float IonoClass::read(uint8_t pin) {
   if (pin >= DO1 && pin <= DO6) {
     return digitalRead(_pinMap[pin]);
   }
@@ -219,7 +219,7 @@ float IonoClass::read(int pin) {
   }
 }
 
-void IonoClass::write(int pin, float value) {
+void IonoClass::write(uint8_t pin, float value) {
   if (pin >= DO1 && pin <= DO6) {
     digitalWrite(_pinMap[pin], value);
   }
@@ -229,7 +229,7 @@ void IonoClass::write(int pin, float value) {
   }
 }
 
-void IonoClass::flip(int pin) {
+void IonoClass::flip(uint8_t pin) {
   write(pin, read(pin) == HIGH ? LOW : HIGH);
 }
 

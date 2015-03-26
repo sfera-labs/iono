@@ -17,12 +17,9 @@
 
 WebServer IonoWebClass::_webServer;
 
-IonoWebClass::HttpURL IonoWebClass::_url1 = {"", 0, ""};
-IonoWebClass::HttpURL IonoWebClass::_url2 = {"", 0, ""};
-IonoWebClass::HttpURL IonoWebClass::_url3 = {"", 0, ""};
-IonoWebClass::HttpURL IonoWebClass::_url4 = {"", 0, ""};
-IonoWebClass::HttpURL IonoWebClass::_url5 = {"", 0, ""};
-IonoWebClass::HttpURL IonoWebClass::_url6 = {"", 0, ""};
+char *IonoWebClass::_host = (char*) malloc(32);
+int IonoWebClass::_port;
+char *IonoWebClass::_command = (char*) malloc(32);
 
 void IonoWebClass::begin(int port) {
   _webServer = WebServer("", port);
@@ -154,7 +151,7 @@ void IonoWebClass::setCommand(WebServer &webServer, WebServer::ConnectionType ty
     
     if (strlen(name) == 3) {
       if (name[0] == 'D' && name[1] == 'O') {
-        int pin;
+        uint8_t pin;
         switch (name[2]) {
           case '1':
             pin = DO1;
@@ -200,13 +197,16 @@ void IonoWebClass::subscribeCommand(WebServer &webServer, WebServer::ConnectionT
     return;
   }
   
-  char pin[4];
   unsigned long stableTime = 0;
   float minVariation = 0;
 
   char host[32];
   int port = 80;
   char command[32];
+  uint8_t mode1 = 1;
+  uint8_t mode2 = 1;
+  uint8_t mode3 = 1;
+  uint8_t mode4 = 1;
 
   char name[8];
   char value[32];
@@ -219,10 +219,7 @@ void IonoWebClass::subscribeCommand(WebServer &webServer, WebServer::ConnectionT
       return;
     }
 
-    if (strcmp(name, "pin") == 0) {
-      strncpy(pin, value, 4);
-
-    } else if (strcmp(name, "st") == 0) {
+    if (strcmp(name, "st") == 0) {
       stableTime = atol(value);
 
     } else if (strcmp(name, "mv") == 0) {
@@ -236,266 +233,226 @@ void IonoWebClass::subscribeCommand(WebServer &webServer, WebServer::ConnectionT
 
     } else if (strcmp(name, "cmd") == 0) {
       strncpy(command, value, 32);
+
+    } else if (strcmp(name, "mode1") == 0) {
+      switch (value[0]) {
+        case 'i':
+          mode1 = 3;
+          break;
+
+        case 'v':
+          mode1 = 2;
+          break;
+      }
+
+    } else if (strcmp(name, "mode2") == 0) {
+      switch (value[0]) {
+        case 'i':
+          mode2 = 3;
+          break;
+
+        case 'v':
+          mode2 = 2;
+          break;
+      }
+
+    } else if (strcmp(name, "mode3") == 0) {
+      switch (value[0]) {
+        case 'i':
+          mode3 = 3;
+          break;
+
+        case 'v':
+          mode3 = 2;
+          break;
+      }
+
+    } else if (strcmp(name, "mode4") == 0) {
+      switch (value[0]) {
+        case 'i':
+          mode4 = 3;
+          break;
+
+        case 'v':
+          mode4 = 2;
+          break;
+      }
     }
   }
 
-  if (strlen(pin) == 3) {
-    int pinNum = -1;
-    if (pin[0] == 'D' && pin[1] == 'I') {
-      switch (pin[2]) {
-        case '1':
-          pinNum = DI1;
-          break;
-        case '2':
-          pinNum = DI2;
-          break;
-        case '3':
-          pinNum = DI3;
-          break;
-        case '4':
-          pinNum = DI4;
-          break;
-        case '5':
-          pinNum = DI5;
-          break;
-        case '6':
-          pinNum = DI6;
-          break;
-      }
-      
-    } else if (pin[0] == 'A') {
-      if (pin[1] == 'V') {
-        switch (pin[2]) {
-          case '1':
-            pinNum = AV1;
-            break;
-          case '2':
-            pinNum = AV2;
-            break;
-          case '3':
-            pinNum = AV3;
-            break;
-          case '4':
-            pinNum = AV4;
-            break;
-        }
-      } else if (pin[1] == 'I') {
-        switch (pin[2]) {
-          case '1':
-            pinNum = AI1;
-            break;
-          case '2':
-            pinNum = AI2;
-            break;
-          case '3':
-            pinNum = AI3;
-            break;
-          case '4':
-            pinNum = AI4;
-            break;
-        }
-      }
-    }
-
-    if (pinNum > 0) {
-      if (pin[0] == 'D') {
-        subscribeDigital(pinNum, stableTime, host, port, command);
-      } else {
-        subscribeAnalog(pinNum, stableTime, minVariation, host, port, command);
-      }  
-
-      webServer.httpSuccess();
-      return;
-    }
-  }
-
-  webServer.httpFail();
+  subscribe(stableTime, minVariation, host, port, command, mode1, mode2, mode3, mode4);
+  webServer.httpSuccess();
 }
 
-void IonoWebClass::subscribeAnalog(int pin, unsigned long stableTime, float minVariation, char *host, int port, char *command) {
-  switch (pin) {
-    case AV1:
-    case AI1:
-      _url1.host = host;
-      _url1.port = port;
-      _url1.command = command;
+void IonoWebClass::subscribe(unsigned long stableTime, float minVariation, char *host, int port, char *command, uint8_t mode1, uint8_t mode2, uint8_t mode3, uint8_t mode4) {
+  strncpy(_host, host, 32);
+  _port = port;
+  strncpy(_command, command, 32);
+
+  Iono.subscribeDigital(DO1, stableTime, &callDigitalURL);
+  Iono.subscribeDigital(DO2, stableTime, &callDigitalURL);
+  Iono.subscribeDigital(DO3, stableTime, &callDigitalURL);
+  Iono.subscribeDigital(DO4, stableTime, &callDigitalURL);
+  Iono.subscribeDigital(DO5, stableTime, &callDigitalURL);
+  Iono.subscribeDigital(DO6, stableTime, &callDigitalURL);
+  
+  switch (mode1) {
+    case 3:
+      Iono.subscribeAnalog(AI1, stableTime, minVariation, &callAnalogURL);
       break;
 
-    case AV2:
-    case AI2:
-      _url2.host = host;
-      _url2.port = port;
-      _url2.command = command;
-      break;
-
-    case AV3:
-    case AI3:
-      _url3.host = host;
-      _url3.port = port;
-      _url3.command = command;
-      break;
-
-    case AV4:
-    case AI4:
-      _url4.host = host;
-      _url4.port = port;
-      _url4.command = command;
+    case 2:
+      Iono.subscribeAnalog(AV1, stableTime, minVariation, &callAnalogURL);
       break;
 
     default:
-      return;
+      Iono.subscribeDigital(DI1, stableTime, &callDigitalURL);
   }
-  Iono.subscribeAnalog(pin, stableTime, minVariation, &callAnalogURL);
+
+  switch (mode2) {
+    case 3:
+      Iono.subscribeAnalog(AI2, stableTime, minVariation, &callAnalogURL);
+      break;
+
+    case 2:
+      Iono.subscribeAnalog(AV2, stableTime, minVariation, &callAnalogURL);
+      break;
+
+    default:
+      Iono.subscribeDigital(DI2, stableTime, &callDigitalURL);
+  }
+
+  switch (mode3) {
+    case 3:
+      Iono.subscribeAnalog(AI3, stableTime, minVariation, &callAnalogURL);
+      break;
+
+    case 2:
+      Iono.subscribeAnalog(AV3, stableTime, minVariation, &callAnalogURL);
+      break;
+
+    default:
+      Iono.subscribeDigital(DI3, stableTime, &callDigitalURL);
+  }
+
+  switch (mode4) {
+    case 3:
+      Iono.subscribeAnalog(AI4, stableTime, minVariation, &callAnalogURL);
+      break;
+
+    case 2:
+      Iono.subscribeAnalog(AV4, stableTime, minVariation, &callAnalogURL);
+      break;
+
+    default:
+      Iono.subscribeDigital(DI4, stableTime, &callDigitalURL);
+  }
+  
+  Iono.subscribeDigital(DI5, stableTime, &callDigitalURL);
+  Iono.subscribeDigital(DI6, stableTime, &callDigitalURL);
 }
 
-void IonoWebClass::subscribeDigital(int pin, unsigned long stableTime, char *host, int port, char *command) {
+void IonoWebClass::callDigitalURL(uint8_t pin, float value) {
+  const char *v = value == HIGH ? "1" : "0";
   switch (pin) {
     case DI1:
-      _url1.host = host;
-      _url1.port = port;
-      _url1.command = command;
+      callURL("DI1", v);
       break;
 
     case DI2:
-      _url2.host = host;
-      _url2.port = port;
-      _url2.command = command;
+      callURL("DI2", v);
       break;
 
     case DI3:
-      _url3.host = host;
-      _url3.port = port;
-      _url3.command = command;
+      callURL("DI3", v);
       break;
 
     case DI4:
-      _url4.host = host;
-      _url4.port = port;
-      _url4.command = command;
+      callURL("DI4", v);
       break;
 
     case DI5:
-      _url5.host = host;
-      _url5.port = port;
-      _url5.command = command;
+      callURL("DI5", v);
       break;
 
     case DI6:
-      _url6.host = host;
-      _url6.port = port;
-      _url6.command = command;
+      callURL("DI6", v);
       break;
 
-    default:
-      return;
+    case DO1:
+      callURL("DO1", v);
+      break;
+
+    case DO2:
+      callURL("DO2", v);
+      break;
+
+    case DO3:
+      callURL("DO3", v);
+      break;
+
+    case DO4:
+      callURL("DO4", v);
+      break;
+
+    case DO5:
+      callURL("DO5", v);
+      break;
+
+    case DO6:
+      callURL("DO6", v);
+      break;
   }
-  Iono.subscribeDigital(pin, stableTime, &callDigitalURL);
 }
 
-void IonoWebClass::callDigitalURL(int pin, float value) {
-  char *pinName;
-  HttpURL *url;
-  switch (pin) {
-    case DI1:
-      pinName = "DI1";
-      url = &_url1;
-      break;
-
-    case DI2:
-      pinName = "DI2";
-      url = &_url2;
-      break;
-
-    case DI3:
-      pinName = "DI3";
-      url = &_url3;
-      break;
-
-    case DI4:
-      pinName = "DI4";
-      url = &_url4;
-      break;
-
-    case DI5:
-      pinName = "DI5";
-      url = &_url5;
-      break;
-
-    case DI6:
-      pinName = "DI6";
-      url = &_url6;
-      break;
-
-    default:
-      return;
-  }
-
-  callURL(url, pinName, value == HIGH ? "1" : "0");
-}
-
-void IonoWebClass::callAnalogURL(int pin, float value) {
-  char *pinName;
-  HttpURL *url;
-  switch (pin) {
-    case AV1:
-      pinName = "AV1";
-      url = &_url1;
-      break;
-
-    case AI1:
-      pinName = "AI1";
-      url = &_url1;
-      break;
-
-    case AV2:
-      pinName = "AV2";
-      url = &_url2;
-      break;
-
-    case AI2:
-      pinName = "AI2";
-      url = &_url2;
-      break;
-
-    case AV3:
-      pinName = "AV3";
-      url = &_url3;
-      break;
-
-    case AI3:
-      pinName = "AI3";
-      url = &_url3;
-      break;
-
-    case AV4:
-      pinName = "AV4";
-      url = &_url4;
-      break;
-
-    case AI4:
-      pinName = "AI4";
-      url = &_url4;
-      break;
-
-    default:
-      return;
-  }
-
+void IonoWebClass::callAnalogURL(uint8_t pin, float value) {
   char sVal[6];
   ftoa(sVal, value);
-  callURL(url, pinName, sVal);
+  switch (pin) {
+    case AV1:
+      callURL("AV1", sVal);
+      break;
+
+    case AI1:
+      callURL("AI1", sVal);
+      break;
+
+    case AV2:
+      callURL("AV2", sVal);
+      break;
+
+    case AI2:
+      callURL("AI2", sVal);
+      break;
+
+    case AV3:
+      callURL("AV3", sVal);
+      break;
+
+    case AI3:
+      callURL("AI3", sVal);
+      break;
+
+    case AV4:
+      callURL("AV4", sVal);
+      break;
+
+    case AI4:
+      callURL("AI4", sVal);
+      break;
+  }
 }
 
-void IonoWebClass::callURL(HttpURL *url, const char *pin, const char *value) {
-  String command = String((*url).command);
-  command.replace("$pin", pin);
-  command.replace("$val", value);
-
+void IonoWebClass::callURL(const char *pin, const char *value) {
   EthernetClient client;
-  for (int i = 0; i < 4; i++) {
-    if (client.connect((*url).host, (*url).port)) {
+  for (uint8_t i = 0; i < 4; i++) {
+    if (client.connect(_host, _port)) {
       client.print("GET ");
-      client.print(command);
+      client.print(_command);
+      client.print("?");
+      client.print(pin);
+      client.print("=");
+      client.print(value);
       client.println(" HTTP/1.1");
       client.println("Connection: close");
       client.println();

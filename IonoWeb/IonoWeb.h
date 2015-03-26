@@ -27,32 +27,22 @@ class IonoWebClass
   public:
     static void begin(int port);
     static void processRequest();
-    static void subscribeDigital(int pin, unsigned long stableTime, char *host, int port, char *command);
-    static void subscribeAnalog(int pin, unsigned long stableTime, float minVariation, char *host, int port, char *command);
+    static void subscribe(unsigned long stableTime, float minVariation, char *host, int port, char *command, uint8_t mode1, uint8_t mode2, uint8_t mode3, uint8_t mode4);
     static WebServer& getWebServer();
 
   private:
     static WebServer _webServer;
 
-    struct HttpURL
-    {
-      const char *host;
-      int port;
-      const char *command;
-    };
-    static HttpURL _url1;
-    static HttpURL _url2;
-    static HttpURL _url3;
-    static HttpURL _url4;
-    static HttpURL _url5;
-    static HttpURL _url6;
+    static char *_host;
+    static int _port;
+    static char *_command;
 
     static void setCommand(WebServer &webServer, WebServer::ConnectionType type, char* urlTail, bool tailComplete);
     static void jsonStateCommand(WebServer &webServer, WebServer::ConnectionType type, char* urlTail, bool tailComplete);
     static void subscribeCommand(WebServer &webServer, WebServer::ConnectionType type, char* urlTail, bool tailComplete);
-    static void callDigitalURL(int pin, float value);
-    static void callAnalogURL(int pin, float value);
-    static void callURL(HttpURL *url, const char *pin, const char *value);
+    static void callDigitalURL(uint8_t pin, float value);
+    static void callAnalogURL(uint8_t pin, float value);
+    static void callURL(const char *pin, const char *value);
     static void ftoa(char *sVal, float fVal);
 };
 

@@ -26,25 +26,22 @@
 /     turns on relay DO1 and DO2 and sets a
 /     5.30V voltage on the analog autput AO1
 /
-/ http://192.168.1.243/api/subscribe?pin=DI1&st=500&host=192.168.1.242&port=8080&cmd=/foo?$pin=$val
-/     Every time DI1 changes value
-/     and is stable for 500ms (st=500)
-/     execute an HTTP GET request to
-/     "192.168.1.242:8080/foo?$pin=$val"
-/     where "$pin" is substituted by the 
-/     name of the pin (i.e. "DI1") and
-/     "$val" by the current value of 
-/     the pin (i.e. 1 or 0)
-/
-/ http://192.168.1.243/api/subscribe?pin=AV2&mv=1&host=192.168.1.242&port=8080&cmd=/bar?$pin=$val
-/     Every time the voltage on AV2
-/     changes of a value >= 1V (mv=1)
-/     execute an HTTP GET request to
-/     "192.168.1.242:8080/bar?$pin=$val"
-/     where "$pin" is substituted by the 
-/     name of the pin (i.e. "AV2") and
-/     "$val" by the current value of 
-/     the pin (e.g. "5.40")
+/ http://192.168.1.243/api/subscribe?mv=0.1&st=100&host=192.168.1.242&port=8080&cmd=/bar&mode1=d&mode2=d&mode3=v&mode4=i
+/     Every time a pin changes value
+/     and is stable for 100ms (st=100)
+/     execute ah HTTP GET request to
+/     "192.168.1.242:8080/bar?<pin>=<val>"
+/     where <pin> is substituted by the 
+/     name of the pin (i.e. "DI1" or "AV3") and
+/     <val> by the current value of 
+/     the pin.
+/     For inputs read as voltage or current
+/     the call will be triggered only if the 
+/     value changes of more than 0.1 V or mA (mv=0.1)
+/     Input 1 will be read as digital (mode1=d),
+/     Input 2 will be read as digital (mode2=d),
+/     Input 3 will be read as voltage (mode3=v),
+/     Input 4 will be read as current (mode4=i).
 */
 
 #include <SPI.h>

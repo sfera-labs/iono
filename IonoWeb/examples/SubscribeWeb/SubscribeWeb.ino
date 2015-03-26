@@ -29,33 +29,27 @@ void setup() {
   Ethernet.begin(mac, ip, gateway, subnet);
   IonoWeb.begin(80);
   
-  /* 
-  / Every time DI1 changes value
-  / and is stable for 500ms
-  / execute an HTTP GET request to
-  / "192.168.1.242:8080/foo?$pin=$val"
-  / where "$pin" is substituted by the 
-  / name of the pin (i.e. "DI1") and
-  / "$val" by the current value of 
-  / the pin (i.e. 1 or 0)
-  / Request example:
-  / http://192.168.1.242:8080/foo?DI1=1
-  */
-  IonoWeb.subscribeDigital(DI1, 500, "192.168.1.242", 8080, "/foo?$pin=$val");
-  
   /*
-  / Every time the voltage on AV2
-  / changes of a value >= 1V
-  / execute an HTTP GET request to
-  / "192.168.1.242:8080/bar?$pin=$val"
-  / where "$pin" is substituted by the 
-  / name of the pin (i.e. "AV2") and
-  / "$val" by the current value of 
-  / the pin (e.g. "5.40")
-  / Request example:
-  / http://192.168.1.242:8080/bar?AV2=5.40
+  / Every time a pin changes value
+  / and is stable for 100ms
+  / execute ah HTTP GET request to
+  / "192.168.1.242:8080/bar?<pin>=<val>"
+  / where <pin> is substituted by the 
+  / name of the pin (i.e. "DI1" or "AV3") and
+  / <val> by the current value of 
+  / the pin.
+  / For inputs read as voltage or current
+  / the call will be triggered only if the 
+  / value changes of more than 0.1 V or mA
+  / Input 1 will be read as digital (1),
+  / Input 2 will be read as digital (1),
+  / Input 3 will be read as voltage (2),
+  / Input 4 will be read as current (3).
+  / Request examples:
+  / http://192.168.1.242:8080/foo?DI1=1
+  / http://192.168.1.242:8080/foo?AV3=5.30
   */
-  IonoWeb.subscribeAnalog(AV2, 0, 1, "192.168.1.242", 8080, "/bar?$pin=$val");
+  IonoWeb.subscribe(100, 0.1, "192.168.1.242", 8080, "/bar", 1, 1, 2, 3);
 }
 
 void loop() {

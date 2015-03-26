@@ -52,28 +52,28 @@
 class IonoClass
 {
   public:
-    typedef void Callback(int pin, float value);
+    typedef void Callback(uint8_t pin, float value);
     IonoClass();
-    float read(int pin);
-    void write(int pin, float value);
-    void flip(int pin);
-    void subscribeDigital(int pin, unsigned long stableTime, Callback *callback);
-    void subscribeAnalog(int pin, unsigned long stableTime, float minVariation, Callback *callback);
+    float read(uint8_t pin);
+    void write(uint8_t pin, float value);
+    void flip(uint8_t pin);
+    void subscribeDigital(uint8_t pin, unsigned long stableTime, Callback *callback);
+    void subscribeAnalog(uint8_t pin, unsigned long stableTime, float minVariation, Callback *callback);
     void process();
 
   private:
-    int _pinMap[21];
+    uint8_t _pinMap[21];
 
-    struct CallbackMap
+    typedef struct CallbackMap
     {
-      int pin;
+      uint8_t pin;
       unsigned long stableTime;
       float minVariation;
       Callback *callback;
       float lastValue;
       float value;
       unsigned long lastTS;
-    };
+    } CallbackMap;
     CallbackMap _i1;
     CallbackMap _i2;
     CallbackMap _i3;
