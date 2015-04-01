@@ -21,6 +21,7 @@
 #include <Iono.h>
 #define WEBDUINO_NO_IMPLEMENTATION true
 #include "WebServer.h"
+#define SUBSCRIBE_TIMEOUT 60000
 
 class IonoWebClass
 {
@@ -36,6 +37,7 @@ class IonoWebClass
     static char *_host;
     static int _port;
     static char *_command;
+    static unsigned long _lastSubscribeTime;
 
     static void setCommand(WebServer &webServer, WebServer::ConnectionType type, char* urlTail, bool tailComplete);
     static void jsonStateCommand(WebServer &webServer, WebServer::ConnectionType type, char* urlTail, bool tailComplete);

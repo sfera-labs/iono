@@ -18,8 +18,9 @@
 WebServer IonoWebClass::_webServer;
 
 char *IonoWebClass::_host = (char*) malloc(32);
-int IonoWebClass::_port;
+int IonoWebClass::_port = 0;
 char *IonoWebClass::_command = (char*) malloc(32);
+unsigned long IonoWebClass::_lastSubscribeTime = 0;
 
 void IonoWebClass::begin(int port) {
   _webServer = WebServer("", port);
@@ -281,7 +282,7 @@ void IonoWebClass::subscribeCommand(WebServer &webServer, WebServer::ConnectionT
   }
 
   subscribe(stableTime, minVariation, host, port, command, mode1, mode2, mode3, mode4);
-  webServer.httpSuccess();
+  jsonStateCommand(webServer, type, urlTail, tailComplete);
 }
 
 void IonoWebClass::subscribe(unsigned long stableTime, float minVariation, char *host, int port, char *command, uint8_t mode1, uint8_t mode2, uint8_t mode3, uint8_t mode4) {
@@ -350,6 +351,7 @@ void IonoWebClass::subscribe(unsigned long stableTime, float minVariation, char 
   
   Iono.subscribeDigital(DI5, stableTime, &callDigitalURL);
   Iono.subscribeDigital(DI6, stableTime, &callDigitalURL);
+  _lastSubscribeTime = millis();
 }
 
 void IonoWebClass::callDigitalURL(uint8_t pin, float value) {
@@ -444,19 +446,26 @@ void IonoWebClass::callAnalogURL(uint8_t pin, float value) {
 }
 
 void IonoWebClass::callURL(const char *pin, const char *value) {
-  EthernetClient client;
-  for (uint8_t i = 0; i < 4; i++) {
-    if (client.connect(_host, _port)) {
-      client.print("GET ");
-      client.print(_command);
-      client.print("?");
-      client.print(pin);
-      client.print("=");
-      client.print(value);
-      client.println(" HTTP/1.1");
-      client.println("Connection: close");
-      client.println();
-      break;
+  if (_port != 0) {
+    if (millis() > _lastSubscribeTime + SUBSCRIBE_TIMEOUT) {
+      _port = 0;
+      return;
+    }
+
+    EthernetClient client;
+    for (uint8_t i = 0; i < 4; i++) {
+      if (client.connect(_host, _port)) {
+        client.print("GET ");
+        client.print(_command);
+        client.print("?");
+        client.print(pin);
+        client.print("=");
+        client.print(value);
+        client.println(" HTTP/1.1");
+        client.println("Connection: close");
+        client.println();
+        break;
+      }
     }
   }
 }
