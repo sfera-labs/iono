@@ -1,7 +1,5 @@
 <html>
-<head>
-	<meta http-equiv="Pragma" content="no-cache">
-	<meta http-equiv="Expires" content="-1">	
+<head id="h">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>iono</title>
 	<style>
@@ -207,15 +205,7 @@
 			-webkit-animation-iteration-count:infinite;
 		}	
 
-		@keyframes cycle {
-			0% {background-color:#336699;} 
-			20% {background-color:#336699;} 
-			55% {background-color:#574582;} 
-			70% {background-color:#458265;} 
-			85% {background-color:#82455b;} 
-		} 
-		
-		@-webkit-keyframes cycle {
+		@keyframes cycle, @-webkit-keyframes cycle {
 			0% {background-color:#336699;} 
 			20% {background-color:#336699;} 
 			55% {background-color:#574582;} 
@@ -225,6 +215,15 @@
 	</style>
 
 	<script>
+		// add link
+		function l(r,d) {
+			var h = $('h'),       
+				n = document.createElement('link');
+			n.rel = 'shortcut icon';
+			n.href = 'data:image/png;base64,'+d;
+			h.appendChild(n);
+		}
+
 		var tid, tip, tie, // timeout draw, timeout poll, timeout error
 			cg, // config, start empty
 			iv, cv, // interface visible (logged in or no pw), configuration panel visible
@@ -232,9 +231,27 @@
 			fc = 0, // status fail count, show error at >3
 			bl = false, // blocked when changing parameters
 			lip = '', // last ip set, to reload
+			p, // bg points
+			k = 0, // num of points
 			x1 = new x(), // status poll
 			x2 = new x(), // config
-			x3 = new x(); // d01,d02, a01
+			x3 = new x(), // d01,d02, a01
+			i,h,
+			z = "iVBORw0KGgoAAAANSUhEUgAAA", // beginning
+			v = "innerHTML";
+			
+
+		// iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAAaVBMVEUAAAAzX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4cT3GBgAAAAInRSTlMA7vz2zaQytZgWAup/w4xUOiXUrWlORB4O4L6Hc15uBvCSAzJEcAAAASlJREFUOMu9ktmOgzAMRQPZCWGnlLLN5P8/crIqZtrnXgnJsU98g2X0XclDvIZB06n/WO6FMlF4ZO/1qTBAuK5A7WG/zfwTf2agmFETskTsZ6PLQFwoCatFu9TrEfoy6okmdzCU2Vtbtj2wI7oMGDb6C5nwHQEg2qFCUMICJcuAYvHA5vD65ccSdQKAHzdxjCPwWG18oJRfQnDa5BqTxMa7nzYhhRmI7zzbpIqATnYM49JgLBJQJF8b++QlJTed9M+cgMWvG3IV4fQGN00dgdb9cxfjWobdUGDY0v0nRzdtt1kLdzph/VEG26geO5MJ1P32zDmxGyfaR8ut9EcERD2B+d62E1VheZ4QuDwBRRZ0U1WXBoqG+1DdmBHSok9iNR9UserG7uY39QfYyyWenVm9NwAAAABJRU5ErkJggg==			
+		h = z+"CAAAAAgCAMAAABEpIrGAAAAaVBMVEUAAAA";
+		// zX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4c
+		for (i=0;i<34; i++) h += "zX4c";
+		h += "T3GBgAAAAInRSTlMA7vz2zaQytZgWAup/w4xUOiXUrWlORB4O4L6Hc15uBvCSAzJEcAAAASlJREFUOMu9ktmOgzAMRQPZCWGnlLLN5P8/crIqZtrnXgnJsU98g2X0XclDvIZB06n/WO6FMlF4ZO/1qTBAuK5A7WG/zfwTf2agmFETskTsZ6PLQFwoCatFu9TrEfoy6okmdzCU2Vtbtj2wI7oMGDb6C5nwHQEg2qFCUMICJcuAYvHA5vD65ccSdQKAHzdxjCPwWG18oJRfQnDa5BqTxMa7nzYhhRmI7zzbpIqATnYM49JgLBJQJF8b++QlJTed9M+cgMWvG3IV4fQGN00dgdb9cxfjWobdUGDY0v0nRzdtt1kLdzph/VEG26geO5MJ1P32zDmxGyfaR8ut9EcERD2B+d62E1VheZ4QuDwBRRZ0U1WXBoqG+1DdmBHSok9iNR9UserG7uY39QfYyyWenVm9NwAAAABJRU5ErkJggg==";		
+		l('shortcut icon',h);
+
+		// iVBORw0KGgoAAAANSUhEUgAAALQAAAC0AgMAAABAo+6hAAAADFBMVEUuZZv////C0uJ7nsDecs4pAAACrklEQVRo3u2WrY7bQBDHHVsBBjkW0AcIuNLKoKpUnfoEBtkkdzGIVIUVWO0L+AFKU1BUkgKf1LtHcEFR8T5BdaSovCDd2fmy15FKDhzYP4jXO7/dnZndzDqJioqKioqKioqKinqyera/779empsuyfafrvfG3FLfg7lh89zUPTg3xpkyg3rn+wrX2p6js4OHmF51ri/1zfoMnSPEtNm5voVvLc/QFqEPTK8T8aoZ0SlZ3hpWl8xkmZDOR3QNMZIrIT0f0RU4h/LE679/hIaM3B6RvjudXGudQdQtGK6SoVJ0zwK9oXx+9wHCmDKgZz4JyQXQO9qXNzjwJTyGmhJkHd3QYtTMYKKhFpAxmMghHQVSHVa0E/hUzWl8CjT1LOcVr9sJyDNhw9HYKMx6UVNMYVLAba9fQCOzKpzb6Hg9yHcmw18wPTHmhyy8o70UUyfjpPFTgipDWlcR5z6631c+YRXR4uSItt4520HAmwGdm/WY9lYLKRzRy4Bmq+2AXg7oaUh7b3c0dx7SsFbbtl9Cuj20TTI7R8PRDGk43I9HSy4LoL+az+rJOMq0R5eYE4gS1/o/nYzpQnZnIq2pqSTfGxzNEcmMM6KZsZ7b4LtWk2BXufVcTpV6a43pdEY9aXpi9SxhWtlS6SnWfwO+d1p72FJqQbrSf5q++2JaoUWGaXOCmLwXUK/VIg5ohcD3DQdJPQXWJ646nDB+6vWyo1Kr9SuobIVj8HGNXTOysAdVv2rmcHf56vse7y5L0UrsjbeWkrnt6QhOQ1H/dmSH0BpWe73A5txs+sWRJIGgKr6lMA2BVU8Oqqa8YEDqOKrk/dIJLY9jBberLlbpMoKqVXN6YXgbswOPU6XhcpfydZHTl0M4+bbf8dvcycDVfRLoAb5woqKioqKioqKioqKesv4B5edfMv7zYwEAAAAASUVORK5CYII=
+		h = z+"LQAAAC0AgMAAABAo+6hAAAADFBMVEUuZZv////C0uJ7nsDecs4pAAACrklEQVRo3u2WrY7bQBDHHVsBBjkW0AcIuNLKoKpUnfoEBtkkdzGIVIUVWO0L+AFKU1BUkgKf1LtHcEFR8T5BdaSovCDd2fmy15FKDhzYP4jXO7/dnZndzDqJioqKioqKioqKinqyera/779empsuyfafrvfG3FLfg7lh89zUPTg3xpkyg3rn+wrX2p6js4OHmF51ri/1zfoMnSPEtNm5voVvLc/QFqEPTK8T8aoZ0SlZ3hpWl8xkmZDOR3QNMZIrIT0f0RU4h/LE679/hIaM3B6RvjudXGudQdQtGK6SoVJ0zwK9oXx+9wHCmDKgZz4JyQXQO9qXNzjwJTyGmhJkHd3QYtTMYKKhFpAxmMghHQVSHVa0E/hUzWl8CjT1LOcVr9sJyDNhw9HYKMx6UVNMYVLAba9fQCOzKpzb6Hg9yHcmw18wPTHmhyy8o70UUyfjpPFTgipDWlcR5z6631c+YRXR4uSItt4520HAmwGdm/WY9lYLKRzRy4Bmq+2AXg7oaUh7b3c0dx7SsFbbtl9Cuj20TTI7R8PRDGk43I9HSy4LoL+az+rJOMq0R5eYE4gS1/o/nYzpQnZnIq2pqSTfGxzNEcmMM6KZsZ7b4LtWk2BXufVcTpV6a43pdEY9aXpi9SxhWtlS6SnWfwO+d1p72FJqQbrSf5q++2JaoUWGaXOCmLwXUK/VIg5ohcD3DQdJPQXWJ646nDB+6vWyo1Kr9SuobIVj8HGNXTOysAdVv2rmcHf56vse7y5L0UrsjbeWkrnt6QhOQ1H/dmSH0BpWe73A5txs+sWRJIGgKr6lMA2BVU8Oqqa8YEDqOKrk/dIJLY9jBberLlbpMoKqVXN6YXgbswOPU6XhcpfydZHTl0M4+bbf8dvcycDVfRLoAb5woqKioqKioqKioqKesv4B5edfMv7zYwEAAAAASUVORK5CYII="; 
+		l('icon',h);
+		l('apple-touch-icon',h);
 
 		function x() {
 			var s = this;
@@ -266,9 +283,13 @@
 			return Math.sqrt(ys * ys + xs * xs);
 		}
 
-		function start() {
-			dr();
-			
+		// start (or restart) draw interval
+		function sD() {
+			if (tid) clearInterval(tid);
+			tid = setInterval(dr,50);
+		}
+
+		function s() {
 			// common pieces
 			var i=0,a,
 				b='<div class=\'',
@@ -279,14 +300,14 @@
 				
 			// switches
 			for (i=1;i<7;i++)
-				$('sw').innerHTML += 
-				b+'swi l '+'  m  m  '[i]+'\'><input id=\'DO'+i+'\' type=\'checkbox\' onclick=\'set()\'><label for=\'DO'+i+'\'></label>DO'+i+e;
+				$('sw')[v] += 
+				b+'swi l '+'  m  m  '[i]+'\'><input id=\'DO'+i+'\' type=\'checkbox\' onclick=\'st()\'><label for=\'DO'+i+'\'></label>DO'+i+e;
 
 			// states
 			for (i=0;i<7;i++) {
 				var t=(i?'':'t'),
 					bb=b+t+d+i+'.';
-				$('sts').innerHTML += b+'i '+t+m+(i?i:'input')+e+ //<div class='i t'>input</div> || <div class='i'>1</div>
+				$('sts')[v] += b+'i '+t+m+(i?i:'input')+e+ //<div class='i t'>input</div> || <div class='i'>1</div>
 				bb+'D'+m+(i?'?':'D')+e+ //<div class='t'>D</div> || <div id='I1.D'>?</div>
 				(i<5?
 				bb+'V'+m+(i?'?':'V')+e+ //<div class='t'>V</div> || <div id='I1.V'>?</div> 
@@ -297,23 +318,38 @@
 			// configuration page
 			for (i=0;i<6;i++) {
 				d='\''+'idgsmp'[i]+'\''; 
-				$('cf').innerHTML += b+'line'+(i>4?' spa':'')+m+ //<div class='line[ spa]'>
+				$('cf')[v] += b+'line'+(i>4?' spa':'')+m+ //<div class='line[ spa]'>
 					'<input id='+d+' name='+d+(i>4?' type=\'password\'':'')+'>'+ // <input id='i' name='i'[ type='password']>
 					'<label for='+d+'>'+['IP','DNS','Gateway','Subnet','MAC','Password'][i]+' : </label>'+ // <label for='i'>IP : </label>
 					e+z; // </div>
 			}
-			$('cf').innerHTML += z+b+'bt l\' onclick=\'cf()\'>cancel'+e+b+'bt r\' onclick=\'save()\'>save'+e+z;
+			$('cf')[v] += z+b+'bt l\' onclick=\'cf()\'>cancel'+e+b+'bt r\' onclick=\'sv()\'>save'+e+z;
 			
 			// first poll for config
-			poll(1);
+			pl(1);
+			
+			// start draw
+			sD();
+		}
+
+		function f(p) {
+			var ts = new Date().getTime();
+			var x = p.x, y = p.y;
+			
+			if (!p.ls) p.ls = ts;
+			var t = ts-p.ls;
+			
+			var d = t*p.s/100 -p.p;
+			x += Math.sin(d)*p.a;
+			y += Math.sin(d)*p.b;
+				
+			return {x:x, y:y};
 		}
 
 		// draw background
 		function dr() {
 			var w = window.innerWidth,
 				h = window.innerHeight,
-				p = [], // points
-				n = 0,
 				q = 200, // 1 point every nxn square
 				x, y, j, l, t, i, 
 				o, g, c;
@@ -330,36 +366,50 @@
 			c.canvas.width = w;
 			c.canvas.height = h;
 
-			for (x = -1; x <= w / q; x++) {
-				for (y = -1; y <= h / q; y++) {
-					p.push(q * x + r(q), q * y + r(q));
-					n++;
+			if (!p) {
+				p = [];
+				for (x = -1; x <= w / q; x++) {
+					for (y = -1; y <= h / q; y++) {
+						i = {x:q * x + r(q), y:q * y + r(q), r:r(10) + 4, a:r(13), b:r(13), p:r(100), w:r(10000), s:r(10)/100, l:[]};
+						p.push(i);
+						k++;
+					}
+				}
+				for (i = 0; i < k; i++) {
+					x = p[i].x;
+					y = p[i].y;
+					for (t = i + 1; t < k; t++) {
+						j = p[t].x;
+						l = p[t].y;
+						if (d(x, y, j, l) < q * 2)
+							p[i].l.push(p[t]); // line to..
+					}
 				}
 			}
 			c.strokeStyle =
 			c.fillStyle = o?'#fff':'#7194b8';//'#7998af';
-			for (i = 0; i < n; i++) {
-				x = p[i * 2];
-				y = p[i * 2 + 1];
-				for (t = i + 1; t < n; t++) {
-					j = p[t * 2];
-					l = p[t * 2 + 1];
+			for (i = 0; i < k; i++) {
+				x = f(p[i]).x;
+				y = f(p[i]).y;
+				for (t = 0; t<p[i].l.length; t++) {
+					j = f(p[i].l[t]).x;
+					l = f(p[i].l[t]).y;
 					c.moveTo(x, y);
-					if (d(x, y, j, l) < q * 2) {
-						c.lineTo(j, l);
-					}
+					c.lineTo(j, l);
 				}
 				c.stroke();
 				c.beginPath();
-				c.arc(x, y, r(10) + 4, 0, 2 * Math.PI, false);
+				c.arc(x, y, p[i].r, 0, 2 * Math.PI, false);
 				c.fill();
 			}
 		}
 		
 		// call draw on resize, after 100ms
 		window.onresize = function() {
-			clearTimeout(tid);
-			tid = setTimeout(dr, 100);
+			p = 0;
+			k = 0;
+			clearInterval(tid);
+			tid = setInterval(sD,1000);
 		}
 
 		// show error for n seconds (default 5s, 0:stay), f: full text
@@ -370,15 +420,15 @@
 			if (w) {
 				if (n !== 0)
 					tie = setTimeout(err, n?n:5000);
-				e.innerHTML = f?w:'error ('+w+')';
+				e[v] = f?w:'error ('+w+')';
 			}
 			e.style.display = w?'block':'none';
 		}
 
 		// request
-		function req(i, u) {
+		function rq(i, u) {
 			if (bl) return; // no more requests
-			//console.log("req: "+u);			
+			//console.log("rq: "+u);			
 			var a = window['x' + i].r;
 			//u = 'http://192.168.1.243'+u;
 			a.open('GET', u+"&"+new Date().getTime()+"=", true);
@@ -386,33 +436,35 @@
 		}
 		
 		// stop poll
-		function stop() {
+		function sp() {
 			if (tip) clearTimeout(tip);
+			if (x1) x1.r.abort();
 		}
 		
 		// poll. now or wait?
-		function poll(n) {
-			//console.log("next state req in "+(n ? 100 : 1000)+"ms");
-			stop();
+		function pl(n) {
+			//console.log("next state rq in "+(n ? 100 : 1000)+"ms");
+			sp();
 			tip = setTimeout(function() {
-				//console.log("state req now");
-				req(1, cg?'/api/state?':'/config?')
+				//console.log("state rq now");
+				rq(1, cg?'/api/state?':'/config?')
 			}, n ? 10 : 1000);
 		}
 		
-		function pass() {
+		// password
+		function ps() {
 			if ($('pw').value == cg.p) {
 				iv = true;
 				uv();
 				err();
-				poll(1);
+				pl(1);
 			} else {
 				err('wrong password',true);
 			}
 		}
 
 		// save configuration
-		function save() {
+		function sv() {
 			var e = 'Please enter a valid ',
 				r = '/?',
 				l,
@@ -434,7 +486,7 @@
 			}
 			
 			lip = $('i').value;
-			req(2, r);
+			rq(2, r);
 			bl = true; // no more requests
 		}
 
@@ -445,17 +497,22 @@
 				[!iv ? 'block' : 'none', iv ? 'block' : 'none', cv || !iv ? 'none' : 'block', !cv || !iv ? 'none' : 'block'][i];				
 		}
 
-		function set(a) {
+		// switch
+		function st(a) {
 			if (a) {
 				as = $('AO1').value;
 				$('AO1').value = "";
 			}
-			poll(); // reset poll
+			pl(); // reset poll
 			var i,r = '/api/set?';
 			for (i=1; i<=6; i++)
 				r += 'DO'+i+'='+($('DO'+i).checked?'1':'0')+'&';
 				
-			req(3, r+(as?('AO1=' + as):''));
+			rq(3, r+(as?('AO1=' + as):''));
+
+			r = "";			
+			for (i=1; i<=6; i++)
+				r += 'DO'+i+':'+($('DO'+i).checked?'1':'0')+' ';
 		}
 
 		function cf() {
@@ -464,7 +521,6 @@
 		}
 		// x1: status poll
 		x1.o = function() {
-			//console.log("x1 loaded: "+x1.r.responseText);
 			fc = 0;
 			var i,t,
 				j = JSON.parse(x1.r.responseText);
@@ -474,7 +530,7 @@
 						$(i).checked = j[i] == '1';
 					else
 						for (t in j[i])
-							$(i + '.' + t).innerHTML = j[i][t];
+							$(i + '.' + t)[v] = j[i][t];
 				}
 			} else {
 				cg = j;
@@ -483,18 +539,18 @@
 				
 				iv = j.p?false:true;
 				uv();
-				if (iv) poll(1);
+				if (iv) pl(1);
 				return;	
 			}
-			poll();
+			pl();
 		}
 		x1.e = function() {
 			fc++;
 			//console.log("x1 error: "+fc);
 			if (fc>2)
 				err('x1'); // x1.statusText
-			poll();
-			/*
+			pl();
+			/*/
 			var uh = '{"DO1":0,"DO2":0,"DO3":0,"DO4":0,"DO5":0,"DO6":0,"I1":{"D":0,"V":0.00,"I":0.00},"I2":{"D":0,"V":0.30,"I":0.61},"I3":{"D":0,"V":0.00,"I":0.00},"I4":{"D":0,"V":0.00,"I":0.00},"I5":{"D":0},"I6":{"D":0}}';
 			var state = JSON.parse(uh);
 			for (var i in state) {
@@ -502,15 +558,15 @@
 			        $(i).checked = state[i] == "1";
 			    else
 			        for (var t in state[i])
-			            $(i + "." + t).innerHTML = state[i][t];
+			            $(i + "." + t)[v] = state[i][t];
 			}
-			*/
+			/**/
 		}
 
 		// x2: config form
 		x2.o = function(e) {
 			//console.log("x2 loaded");
-			stop();
+			sp();
 			$('cf').style.display = 'none';
 			$('vw').style.display = 'none';
 			$('sv').style.display = 'block';
@@ -524,17 +580,18 @@
 			//console.log("x2 error");
 			err('x2');
 			bl = false; // resume requests
-			poll(1);
+			pl(1);
 		}
 		
 		x3.o = function() {
 			as = '';
 		}
-		x3.e = set;
+		x3.e = st;
 	</script>
 </head>
 
-<body onload='start()'>
+<body onload='s()'>
+
 	<div class='bg a'>
 		<canvas id='c'></canvas>
 	</div>
@@ -553,11 +610,11 @@
 			</div>
 			<div id='ps' class='p'>
 				<div class='line'>
-					<input id='pw' name='pw' maxlength='8' type='password' onkeypress='{if (event.keyCode==13)pass()}'>
+					<input id='pw' name='pw' maxlength='8' type='password' onkeypress='{if (event.keyCode==13)ps()}'>
 					<label for='pw'>Password : </label>
 				</div>
 				<br>
-				<div class='bt r' onclick='pass()'>ok</div>
+				<div class='bt r' onclick='ps()'>ok</div>
 				<br>
 			</div>
 			<div id='cf' class='p'>
@@ -571,9 +628,9 @@
 				<hr />
 				<div class='ao l'>
 					<label for='AO1'>AO1 : </label>
-					<input id='AO1' name='AO1' onkeypress='{if (event.keyCode==13)set(1)}'>&nbsp;V
+					<input id='AO1' name='AO1' onkeypress='{if (event.keyCode==13)st(1)}'>&nbsp;V
 				</div>
-				<div class='bt c r' onclick='set(1)'>set</div>
+				<div class='bt c r' onclick='st(1)'>set</div>
 				<br>
 			</div>
 			<div id='err' class='err r'></div>
