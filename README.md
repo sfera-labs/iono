@@ -1,6 +1,6 @@
 # Iono - Arduino libraries
 
-![iono](https://www.iono.cc/app/uploads/2015/02/logo.png)
+![iono](http://www.sferalabs.cc/wp-content/uploads/2015/09/logo2x.png)
 
 This repository contains Arduino libraries to be used with [iono](http://www.iono.cc/).  
 
