@@ -1,10 +1,10 @@
 /*
   SubscribeWeb.ino - Arduino sketch showing the use of the IonoWeb library 
 
-    Copyright (C) 2014-2015 Sfera Labs, a division of Home Systems Consulting S.p.A. - All rights reserved.
+    Copyright (C) 2014-2016 Sfera Labs S.r.l. - All rights reserved.
 
     For information, see the iono web site:
-    http://www.iono.cc/
+    http://www.sferalabs.cc/iono
   
   This code is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -46,8 +46,8 @@ void setup() {
   / Input 3 will be read as voltage (2),
   / Input 4 will be read as current (3).
   / Request examples:
-  / http://192.168.1.242:8080/foo?DI1=1
-  / http://192.168.1.242:8080/foo?AV3=5.30
+  / http://192.168.1.242:8080/bar?DI1=1
+  / http://192.168.1.242:8080/bar?AV3=5.30
   */
   IonoWeb.subscribe(100, 0.1, "192.168.1.242", 8080, "/bar", 1, 1, 2, 3);
 }

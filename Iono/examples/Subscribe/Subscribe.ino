@@ -1,10 +1,10 @@
 /*  
   Subscribe.ino - Arduino sketch showing the use of the Iono library
 
-    Copyright (C) 2014-2015 Sfera Labs, a division of Home Systems Consulting S.p.A. - All rights reserved.
+    Copyright (C) 2014-2016 Sfera Labs S.r.l. - All rights reserved.
 
     For information, see the iono web site:
-    http://www.iono.cc/
+    http://www.sferalabs.cc/iono
   
   This code is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
