@@ -39,12 +39,12 @@ void loop() {
   delay(100);
 }
 
-void onDI1Change(int pin, float value) {
+void onDI1Change(uint8_t pin, float value) {
   Serial.print("DI1 switched ");
   Serial.println(value == HIGH ? "on" : "off");
 }
 
-void onAV2Change(int pin, float value) {
+void onAV2Change(uint8_t pin, float value) {
   Serial.print("AV2 voltage: ");
   Serial.println(value);
 }
