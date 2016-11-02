@@ -1,5 +1,5 @@
 /* 
-  IonoModbusRtu.cpp - A Modbus RTU slave for Iono Uno
+  IonoModbusRtu.cpp - A Modbus RTU slave for Iono Uno - Version 1.1
   
     Copyright (C) 2016 Sfera Labs S.r.l. - All rights reserved.
     
@@ -104,11 +104,11 @@ unsigned short counters[6]; // digital inputs counter
 byte speedCurrent;
 byte parityCurrent;
 byte addressCurrent;
-char rulesCurrent[6];
+char rulesCurrent[7];
 byte speedNew;
 byte parityNew;
 byte addressNew;
-char rulesNew[6];
+char rulesNew[7];
 
 unsigned long t15micros;
 unsigned long t35micros;
