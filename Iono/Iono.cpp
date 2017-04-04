@@ -1,10 +1,10 @@
 /* 
   Iono.cpp - Arduino library for the control of iono
 
-    Copyright (C) 2014-2016 Sfera Labs S.r.l. - All rights reserved.
+    Copyright (C) 2014-2017 Sfera Labs S.r.l. - All rights reserved.
 
     For information, see the iono web site:
-    http://www.sferalabs.cc/iono
+    http://www.sferalabs.cc/iono-arduino
   
   This code is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -58,6 +58,10 @@ IonoClass::IonoClass() {
   pinMode(_pinMap[DI5], INPUT);
   pinMode(_pinMap[DI6], INPUT);
   pinMode(_pinMap[AO1], OUTPUT);
+
+#ifndef ARDUINO_SAMD_ZERO
+  analogReference(EXTERNAL);
+#endif
 }
 
 void IonoClass::subscribeDigital(uint8_t pin, unsigned long stableTime, Callback *callback) {
