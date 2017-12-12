@@ -1,11 +1,11 @@
 /*
   IonoWeb.h - Arduino library for the control of iono ethernet via a HTTP-based API
 
-    Copyright (C) 2014-2016 Sfera Labs S.r.l. - All rights reserved.
+    Copyright (C) 2014-2017 Sfera Labs S.r.l. - All rights reserved.
 
     For information, see the iono web site:
-    http://www.sferalabs.cc/iono
-  
+    http://www.sferalabs.cc/iono-arduino
+
   This code is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
   License as published by the Free Software Foundation; either
@@ -16,8 +16,6 @@
 #ifndef IonoWeb_h
 #define IonoWeb_h
 
-#include <SPI.h>
-#include <Ethernet.h>
 #include <Iono.h>
 #define WEBDUINO_NO_IMPLEMENTATION true
 #include "WebServer.h"

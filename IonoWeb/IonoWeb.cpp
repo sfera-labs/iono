@@ -1,11 +1,11 @@
 /*
   IonoWeb.cpp - Arduino library for the control of iono ethernet via a HTTP-based API
 
-    Copyright (C) 2014-2016 Sfera Labs S.r.l. - All rights reserved.
+    Copyright (C) 2014-2017 Sfera Labs S.r.l. - All rights reserved.
 
     For information, see the iono web site:
-    http://www.sferalabs.cc/iono
-  
+    http://www.sferalabs.cc/iono-arduino
+
   This code is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
   License as published by the Free Software Foundation; either
@@ -43,93 +43,93 @@ WebServer& IonoWebClass::getWebServer() {
 void IonoWebClass::jsonStateCommand(WebServer &webServer, WebServer::ConnectionType type, char* urlTail, bool tailComplete) {
   webServer.httpSuccess("application/json");
   webServer.print("{");
-  
+
     webServer.print("\"DO1\":");
     webServer.print((int) Iono.read(DO1));
     webServer.print(",");
-    
+
     webServer.print("\"DO2\":");
     webServer.print((int) Iono.read(DO2));
     webServer.print(",");
-    
+
     webServer.print("\"DO3\":");
     webServer.print((int) Iono.read(DO3));
     webServer.print(",");
-    
+
     webServer.print("\"DO4\":");
     webServer.print((int) Iono.read(DO4));
     webServer.print(",");
-    
+
     webServer.print("\"DO5\":");
     webServer.print((int) Iono.read(DO5));
     webServer.print(",");
-    
+
     webServer.print("\"DO6\":");
     webServer.print((int) Iono.read(DO6));
     webServer.print(",");
-    
+
     webServer.print("\"I1\":{");
       webServer.print("\"D\":");
       webServer.print((int) Iono.read(DI1));
       webServer.print(",");
-      
+
       webServer.print("\"V\":");
       webServer.print(Iono.read(AV1));
       webServer.print(",");
-      
+
       webServer.print("\"I\":");
       webServer.print(Iono.read(AI1));
     webServer.print("},");
-    
+
     webServer.print("\"I2\":{");
       webServer.print("\"D\":");
       webServer.print((int) Iono.read(DI2));
       webServer.print(",");
-      
+
       webServer.print("\"V\":");
       webServer.print(Iono.read(AV2));
       webServer.print(",");
-      
+
       webServer.print("\"I\":");
       webServer.print(Iono.read(AI2));
     webServer.print("},");
-    
+
     webServer.print("\"I3\":{");
       webServer.print("\"D\":");
       webServer.print((int) Iono.read(DI3));
       webServer.print(",");
-      
+
       webServer.print("\"V\":");
       webServer.print(Iono.read(AV3));
       webServer.print(",");
-      
+
       webServer.print("\"I\":");
       webServer.print(Iono.read(AI3));
     webServer.print("},");
-    
+
     webServer.print("\"I4\":{");
       webServer.print("\"D\":");
       webServer.print((int) Iono.read(DI4));
       webServer.print(",");
-      
+
       webServer.print("\"V\":");
       webServer.print(Iono.read(AV4));
       webServer.print(",");
-      
+
       webServer.print("\"I\":");
       webServer.print(Iono.read(AI4));
     webServer.print("},");
-    
+
     webServer.print("\"I5\":{");
       webServer.print("\"D\":");
       webServer.print((int) Iono.read(DI5));
     webServer.print("},");
-    
+
     webServer.print("\"I6\":{");
       webServer.print("\"D\":");
       webServer.print((int) Iono.read(DI6));
     webServer.print("}");
-  
+
   webServer.print("}");
 }
 
@@ -142,14 +142,14 @@ void IonoWebClass::setCommand(WebServer &webServer, WebServer::ConnectionType ty
   char name[8];
   char value[8];
   URLPARAM_RESULT rc;
-  
+
   while (strlen(urlTail)) {
     rc = webServer.nextURLparam(&urlTail, name, 8, value, 8);
     if (rc == URLPARAM_EOS) {
        webServer.httpFail();
        return;
     }
-    
+
     if (strlen(name) == 3) {
       if (name[0] == 'D' && name[1] == 'O') {
         uint8_t pin;
@@ -182,13 +182,13 @@ void IonoWebClass::setCommand(WebServer &webServer, WebServer::ConnectionType ty
         } else {
           Iono.write(pin, value[0] == '1' ? HIGH : LOW);
         }
-        
+
       } else if (name[0] == 'A' && name[1] == 'O' && name[2] == '1') {
         Iono.write(AO1, atof(value));
       }
     }
   }
-  
+
   webServer.httpSuccess();
 }
 
@@ -197,7 +197,7 @@ void IonoWebClass::subscribeCommand(WebServer &webServer, WebServer::ConnectionT
     webServer.httpFail();
     return;
   }
-  
+
   unsigned long stableTime = 0;
   float minVariation = 0;
 
@@ -212,7 +212,7 @@ void IonoWebClass::subscribeCommand(WebServer &webServer, WebServer::ConnectionT
   char name[8];
   char value[32];
   URLPARAM_RESULT rc;
-  
+
   while (strlen(urlTail)) {
     rc = webServer.nextURLparam(&urlTail, name, 8, value, 32);
     if (rc == URLPARAM_EOS) {
@@ -296,7 +296,7 @@ void IonoWebClass::subscribe(unsigned long stableTime, float minVariation, char 
   Iono.subscribeDigital(DO4, stableTime, &callDigitalURL);
   Iono.subscribeDigital(DO5, stableTime, &callDigitalURL);
   Iono.subscribeDigital(DO6, stableTime, &callDigitalURL);
-  
+
   switch (mode1) {
     case 3:
       Iono.subscribeAnalog(AI1, stableTime, minVariation, &callAnalogURL);
@@ -348,7 +348,7 @@ void IonoWebClass::subscribe(unsigned long stableTime, float minVariation, char 
     default:
       Iono.subscribeDigital(DI4, stableTime, &callDigitalURL);
   }
-  
+
   Iono.subscribeDigital(DI5, stableTime, &callDigitalURL);
   Iono.subscribeDigital(DI6, stableTime, &callDigitalURL);
   _lastSubscribeTime = millis();

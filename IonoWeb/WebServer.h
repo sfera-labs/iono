@@ -29,7 +29,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <Ethernet.h>
 #include <EthernetClient.h>
 #include <EthernetServer.h>
 
@@ -277,10 +276,10 @@ public:
   uint8_t available();
 
   // Flush the send buffer
-  void flushBuf(); 
+  void flushBuf();
 
   // Close the current connection and flush ethernet buffers
-  void reset(); 
+  void reset();
 private:
   EthernetServer m_server;
   EthernetClient m_client;
@@ -447,7 +446,7 @@ void WebServer::printf(const __FlashStringHelper *format, ... )
   vsnprintf_P(buf, sizeof(buf), (const char *)format, ap); // progmem for AVR
 #else
   vsnprintf(buf, sizeof(buf), (const char *)format, ap); // for the rest of the world
-#endif  
+#endif
   va_end(ap);
   print(buf);
 }
@@ -624,7 +623,7 @@ void WebServer::httpFail()
   printP(webServerHeader);
 #endif
 
-  P(failMsg2) = 
+  P(failMsg2) =
     "Content-Type: text/html" CRLF
     CRLF
     WEBDUINO_FAIL_MESSAGE;
@@ -669,7 +668,7 @@ void WebServer::favicon(ConnectionType type)
 //   printP(webServerHeader);
 // #endif
 
-//   P(unauthMsg2) = 
+//   P(unauthMsg2) =
 //     "Content-Type: text/html" CRLF
 //     "WWW-Authenticate: Basic realm=\"" WEBDUINO_AUTH_REALM "\"" CRLF
 //     CRLF
@@ -687,7 +686,7 @@ void WebServer::favicon(ConnectionType type)
 //   printP(webServerHeader);
 // #endif
 
-//   P(servErrMsg2) = 
+//   P(servErrMsg2) =
 //     "Content-Type: text/html" CRLF
 //     CRLF
 //     WEBDUINO_SERVER_ERROR_MESSAGE;
@@ -704,7 +703,7 @@ void WebServer::favicon(ConnectionType type)
 //   printP(webServerHeader);
 // #endif
 
-//   P(noContentMsg2) = 
+//   P(noContentMsg2) =
 //     CRLF
 //     CRLF;
 
@@ -721,7 +720,7 @@ void WebServer::httpSuccess(const char *contentType,
   printP(webServerHeader);
 #endif
 
-  P(successMsg2) = 
+  P(successMsg2) =
     "Access-Control-Allow-Origin: *" CRLF
     "Content-Type: ";
 
