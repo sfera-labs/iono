@@ -1,11 +1,11 @@
-/* 
-  IonoModbusRtu.cpp - A Modbus RTU slave for Iono Uno - Version 2.0
-  
+/*
+  IonoModbusRtu.cpp - A Modbus RTU slave for Iono Arduino - Version 2.0
+
     Copyright (C) 2016-2017 Sfera Labs S.r.l. - All rights reserved.
-    
-    For information, see the iono web site:
+
+    For information, see:
     http://www.sferalabs.cc/iono-arduino
-  
+
   This code is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
   License as published by the Free Software Foundation; either
@@ -25,11 +25,7 @@
 #define DELAY  25                           // the debounce delay in milliseconds
 #define BOOT_CONSOLE_TIMEOUT_MILLIS 15000   // if 5 consecutive spaces are received within this time interval after boot, enter console mode
 
-#ifdef ARDUINO_SAMD_ZERO
-const PROGMEM char CONSOLE_MENU_HEADER[]  = {"Sfera Labs Iono Zero (2.0) - Modbus RTU slave configuration menu"};
-#else
-const PROGMEM char CONSOLE_MENU_HEADER[]  = {"Sfera Labs Iono Uno (2.0) - Modbus RTU slave configuration menu"};
-#endif
+const PROGMEM char CONSOLE_MENU_HEADER[]  = {"Sfera Labs - Iono Arduino (2.0) - Modbus RTU slave configuration menu"};
 const PROGMEM char CONSOLE_MENU_CURRENT_CONFIG[]  = {"Print current configuration"};
 const PROGMEM char CONSOLE_MENU_SPEED[]  = {"Speed (baud)"};
 const PROGMEM char CONSOLE_MENU_PARITY[]  = {"Parity"};
@@ -93,13 +89,12 @@ static byte auchCRCLo[] = {
 
 const long SPEED_VALUE[] = {0, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200};
 
-#ifdef ARDUINO_SAMD_ZERO
-HardwareSerial& consolePort = Serial;
-HardwareSerial& rs485Port = Serial1;
+#ifdef SERIAL_PORT_MONITOR
+  #define consolePort SERIAL_PORT_MONITOR
 #else
-HardwareSerial& consolePort = Serial;
-HardwareSerial& rs485Port = Serial;
+  #define consolePort SERIAL_PORT_HARDWARE
 #endif
+#define rs485Port SERIAL_PORT_HARDWARE
 
 byte inputFrameState; // 0: waiting for new frame, 1: receiving frame with matching address, 2: receiving frame with non-matching address (to be skipped), 3: error
 unsigned long lastFrameCharacterTimeMicros = 0;
@@ -174,7 +169,7 @@ void loop() {
         }
         inputFrameState = 0;
       }
-    } 
+    }
   } else {
     if (consolePort.available()) {
       int b = consolePort.read();
@@ -199,7 +194,7 @@ void loop() {
     } else if (validConfiguration && opMode == 0 && bootTimeMillis + BOOT_CONSOLE_TIMEOUT_MILLIS < millis()) {
       opMode = 2;
       setSerial();
-    } 
+    }
   }
 }
 
