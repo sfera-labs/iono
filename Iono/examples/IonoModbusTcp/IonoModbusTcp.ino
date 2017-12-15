@@ -1,11 +1,11 @@
-/* 
-  IonoModbusTcp.cpp - A Modbus TCP server for iono ethernet
-  
-    Copyright (C) 2016 Sfera Labs S.r.l. - All rights reserved.
-    
-    For information, see the iono web site:
-    http://www.sferalabs.cc/iono
-  
+/*
+  IonoModbusTcp.cpp - A Modbus TCP server for Iono Ethernet
+
+    Copyright (C) 2016-2017 Sfera Labs S.r.l. - All rights reserved.
+
+    For information, see:
+    http://www.sferalabs.cc/iono-arduino
+
   This code is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
   License as published by the Free Software Foundation; either
@@ -14,14 +14,18 @@
 */
 
 #include <EEPROM.h>
-#include <Ethernet.h>
+#ifdef ARDUINO_AVR_LEONARDO_ETH
+  #include <Ethernet2.h>
+#else
+  #include <Ethernet.h>
+#endif
 #include <SPI.h>
 #include <avr/pgmspace.h>
 #include <Iono.h>
 
 #define DELAY  50            // the debounce delay in milliseconds
 
-const PROGMEM char CONSOLE_MENU_HEADER[]  = {"Sfera Labs Iono Ethernet (1.0) - Modbus TCP server configuration menu"};
+const PROGMEM char CONSOLE_MENU_HEADER[]  = {"Sfera Labs - Iono Arduino - Modbus TCP server configuration menu"};
 const PROGMEM char CONSOLE_MENU_CURRENT_CONFIG[]  = {"Print current configuration"};
 const PROGMEM char CONSOLE_MENU_MAC[]  = {"MAC address"};
 const PROGMEM char CONSOLE_MENU_IP[]  = {"IP address"};
@@ -409,51 +413,56 @@ void serialConsole() {
       case 1: // MAC address
         if (stringEdit(macNew, c, 17, true, '-')) {
           byte maca[6];
-          if (parseMacAddress(macNew, maca)) {
-            consoleState = 0;
-            Serial.println();
-            printConsoleMenu();
+          Serial.println();
+          if (!parseMacAddress(macNew, maca)) {
+            printlnProgMemString(CONSOLE_ERROR);
           }
+          consoleState = 0;
+          printConsoleMenu();
         }
         break;
       case 2: // IP address
         if (stringEdit(ipNew, c, 15, false, '.')) {
           byte ipa[6];
-          if (parseIpAddress(ipNew, ipa)) {
-            consoleState = 0;
-            Serial.println();
-            printConsoleMenu();
+          Serial.println();
+          if (!parseIpAddress(ipNew, ipa)) {
+            printlnProgMemString(CONSOLE_ERROR);
           }
+          consoleState = 0;
+          printConsoleMenu();
         }
         break;
       case 3: // subnet mask
         if (stringEdit(netmaskNew, c, 15, false, '.')) {
           byte netmaska[6];
-          if (parseIpAddress(netmaskNew, netmaska)) {
-            consoleState = 0;
-            Serial.println();
-            printConsoleMenu();
+          Serial.println();
+          if (!parseIpAddress(netmaskNew, netmaska)) {
+            printlnProgMemString(CONSOLE_ERROR);
           }
+          consoleState = 0;
+          printConsoleMenu();
         }
         break;
       case 4: // DNS
         if (stringEdit(dnsNew, c, 15, false, '.')) {
           byte dnsa[6];
-          if (parseIpAddress(dnsNew, dnsa)) {
-            consoleState = 0;
-            Serial.println();
-            printConsoleMenu();
+          Serial.println();
+          if (!parseIpAddress(dnsNew, dnsa)) {
+            printlnProgMemString(CONSOLE_ERROR);
           }
+          consoleState = 0;
+          printConsoleMenu();
         }
         break;
       case 5: // gateway
         if (stringEdit(gatewayNew, c, 15, false, '.')) {
           byte ipa[6];
-          if (parseIpAddress(gatewayNew, ipa)) {
-            consoleState = 0;
-            Serial.println();
-            printConsoleMenu();
+          Serial.println();
+          if (!parseIpAddress(gatewayNew, ipa)) {
+            printlnProgMemString(CONSOLE_ERROR);
           }
+          consoleState = 0;
+          printConsoleMenu();
         }
         break;
       case 6: // confirm to save
@@ -700,8 +709,11 @@ boolean stringEdit(char *s, int c, int size, boolean hex, char sep) {
         s[i - 1] = 0;
       }
       break;
+    case 10: // newline
     case 13: // enter
-      return true;
+      if (strlen(s) > 0) {
+        return true;
+      }
       break;
     default:
       if (strlen(s) < size) {
