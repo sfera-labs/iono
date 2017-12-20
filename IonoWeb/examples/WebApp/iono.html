@@ -1,36 +1,20 @@
 <html>
-<head id="h">
+<head>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>iono</title>
 	<style>
-		* {
-		    -webkit-user-select: none;
-		    -khtml-user-select: none;
-		    -moz-user-select: -moz-none;
-		    -o-user-select: none;
-		    user-select: none;
-		}
-		
-		input, .sts div {
-		    -webkit-user-select: text;
-		    -khtml-user-select: text;
-		    -moz-user-select: text;
-		    -o-user-select: text;
-		    user-select: text;
-		}	
-	
 		body {
 			text-align: center;
-			font: 16px helvetica, arial, sans-serif;
+			font: 16px helvetica;
 			margin: 0;
 			padding: 0;
 			background: #336699;
 		}
-		
+
 		.l {float: left;}
 		.r {float: right;}
 		.a {position: absolute;}
-		
+
 		input {
 			-webkit-appearance: none;
 			-webkit-text-size-adjust: none;
@@ -42,11 +26,6 @@
 		.body {
 			width: 280px;
 			margin: 0 auto;
-		}
-		.bg {
-			width: 100%;
-			height: 100%;
-			overflow: hidden;
 		}
 		.swi {
 			margin: 5px;
@@ -121,14 +100,16 @@
 			text-align: right;
 		}
 		.title {
+			color: #fff;
 			margin-top: 30px;
-			margin-bottom: 5px;
-			height:25px;
+			font-size: 28px;
 		}
+		/*
 		.title img {
 			float:left;
 			margin-left:97px;
 		}
+		*/
 		.p {
 			margin: 20px auto 0 auto;
 			padding: 10px;
@@ -193,65 +174,22 @@
 		#AO1 {
 			width: 117px;
 		}
-		body {
-			animation-name: cycle; 
-			animation-duration:120s; 
-			animation-direction:alternate; 
-			animation-iteration-count:infinite; 
-			
-			-webkit-animation-name: cycle; 
-			-webkit-animation-duration:120s; 
-			-webkit-animation-direction:alternate; 
-			-webkit-animation-iteration-count:infinite;
-		}	
-
-		@keyframes cycle, @-webkit-keyframes cycle {
-			0% {background-color:#336699;} 
-			20% {background-color:#336699;} 
-			55% {background-color:#574582;} 
-			70% {background-color:#458265;} 
-			85% {background-color:#82455b;} 
-		} 
 	</style>
 
 	<script>
-		// add link
-		function l(r,d) {
-			var h = $('h'),       
-				n = document.createElement('link');
-			n.rel = 'shortcut icon';
-			n.href = 'data:image/png;base64,'+d;
-			h.appendChild(n);
-		}
-
-		var tid, tip, tie, // timeout draw, timeout poll, timeout error
+		var tip, tie, // timeout poll, timeout error
 			cg, // config, start empty
 			iv, cv, // interface visible (logged in or no pw), configuration panel visible
 			as, // ao value to send
 			fc = 0, // status fail count, show error at >3
 			bl = false, // blocked when changing parameters
 			lip = '', // last ip set, to reload
-			p, // bg points
 			k = 0, // num of points
 			x1 = new x(), // status poll
 			x2 = new x(), // config
 			x3 = new x(), // d01,d02, a01
-			i,h,
-			z = "iVBORw0KGgoAAAANSUhEUgAAA", // beginning
+			i,
 			v = "innerHTML";
-			
-
-		// iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAAaVBMVEUAAAAzX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4cT3GBgAAAAInRSTlMA7vz2zaQytZgWAup/w4xUOiXUrWlORB4O4L6Hc15uBvCSAzJEcAAAASlJREFUOMu9ktmOgzAMRQPZCWGnlLLN5P8/crIqZtrnXgnJsU98g2X0XclDvIZB06n/WO6FMlF4ZO/1qTBAuK5A7WG/zfwTf2agmFETskTsZ6PLQFwoCatFu9TrEfoy6okmdzCU2Vtbtj2wI7oMGDb6C5nwHQEg2qFCUMICJcuAYvHA5vD65ccSdQKAHzdxjCPwWG18oJRfQnDa5BqTxMa7nzYhhRmI7zzbpIqATnYM49JgLBJQJF8b++QlJTed9M+cgMWvG3IV4fQGN00dgdb9cxfjWobdUGDY0v0nRzdtt1kLdzph/VEG26geO5MJ1P32zDmxGyfaR8ut9EcERD2B+d62E1VheZ4QuDwBRRZ0U1WXBoqG+1DdmBHSok9iNR9UserG7uY39QfYyyWenVm9NwAAAABJRU5ErkJggg==			
-		h = z+"CAAAAAgCAMAAABEpIrGAAAAaVBMVEUAAAA";
-		// zX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4czX4c
-		for (i=0;i<34; i++) h += "zX4c";
-		h += "T3GBgAAAAInRSTlMA7vz2zaQytZgWAup/w4xUOiXUrWlORB4O4L6Hc15uBvCSAzJEcAAAASlJREFUOMu9ktmOgzAMRQPZCWGnlLLN5P8/crIqZtrnXgnJsU98g2X0XclDvIZB06n/WO6FMlF4ZO/1qTBAuK5A7WG/zfwTf2agmFETskTsZ6PLQFwoCatFu9TrEfoy6okmdzCU2Vtbtj2wI7oMGDb6C5nwHQEg2qFCUMICJcuAYvHA5vD65ccSdQKAHzdxjCPwWG18oJRfQnDa5BqTxMa7nzYhhRmI7zzbpIqATnYM49JgLBJQJF8b++QlJTed9M+cgMWvG3IV4fQGN00dgdb9cxfjWobdUGDY0v0nRzdtt1kLdzph/VEG26geO5MJ1P32zDmxGyfaR8ut9EcERD2B+d62E1VheZ4QuDwBRRZ0U1WXBoqG+1DdmBHSok9iNR9UserG7uY39QfYyyWenVm9NwAAAABJRU5ErkJggg==";		
-		l('shortcut icon',h);
-
-		// iVBORw0KGgoAAAANSUhEUgAAALQAAAC0AgMAAABAo+6hAAAADFBMVEUuZZv////C0uJ7nsDecs4pAAACrklEQVRo3u2WrY7bQBDHHVsBBjkW0AcIuNLKoKpUnfoEBtkkdzGIVIUVWO0L+AFKU1BUkgKf1LtHcEFR8T5BdaSovCDd2fmy15FKDhzYP4jXO7/dnZndzDqJioqKioqKioqKinqyera/779empsuyfafrvfG3FLfg7lh89zUPTg3xpkyg3rn+wrX2p6js4OHmF51ri/1zfoMnSPEtNm5voVvLc/QFqEPTK8T8aoZ0SlZ3hpWl8xkmZDOR3QNMZIrIT0f0RU4h/LE679/hIaM3B6RvjudXGudQdQtGK6SoVJ0zwK9oXx+9wHCmDKgZz4JyQXQO9qXNzjwJTyGmhJkHd3QYtTMYKKhFpAxmMghHQVSHVa0E/hUzWl8CjT1LOcVr9sJyDNhw9HYKMx6UVNMYVLAba9fQCOzKpzb6Hg9yHcmw18wPTHmhyy8o70UUyfjpPFTgipDWlcR5z6631c+YRXR4uSItt4520HAmwGdm/WY9lYLKRzRy4Bmq+2AXg7oaUh7b3c0dx7SsFbbtl9Cuj20TTI7R8PRDGk43I9HSy4LoL+az+rJOMq0R5eYE4gS1/o/nYzpQnZnIq2pqSTfGxzNEcmMM6KZsZ7b4LtWk2BXufVcTpV6a43pdEY9aXpi9SxhWtlS6SnWfwO+d1p72FJqQbrSf5q++2JaoUWGaXOCmLwXUK/VIg5ohcD3DQdJPQXWJ646nDB+6vWyo1Kr9SuobIVj8HGNXTOysAdVv2rmcHf56vse7y5L0UrsjbeWkrnt6QhOQ1H/dmSH0BpWe73A5txs+sWRJIGgKr6lMA2BVU8Oqqa8YEDqOKrk/dIJLY9jBberLlbpMoKqVXN6YXgbswOPU6XhcpfydZHTl0M4+bbf8dvcycDVfRLoAb5woqKioqKioqKioqKesv4B5edfMv7zYwEAAAAASUVORK5CYII=
-		h = z+"LQAAAC0AgMAAABAo+6hAAAADFBMVEUuZZv////C0uJ7nsDecs4pAAACrklEQVRo3u2WrY7bQBDHHVsBBjkW0AcIuNLKoKpUnfoEBtkkdzGIVIUVWO0L+AFKU1BUkgKf1LtHcEFR8T5BdaSovCDd2fmy15FKDhzYP4jXO7/dnZndzDqJioqKioqKioqKinqyera/779empsuyfafrvfG3FLfg7lh89zUPTg3xpkyg3rn+wrX2p6js4OHmF51ri/1zfoMnSPEtNm5voVvLc/QFqEPTK8T8aoZ0SlZ3hpWl8xkmZDOR3QNMZIrIT0f0RU4h/LE679/hIaM3B6RvjudXGudQdQtGK6SoVJ0zwK9oXx+9wHCmDKgZz4JyQXQO9qXNzjwJTyGmhJkHd3QYtTMYKKhFpAxmMghHQVSHVa0E/hUzWl8CjT1LOcVr9sJyDNhw9HYKMx6UVNMYVLAba9fQCOzKpzb6Hg9yHcmw18wPTHmhyy8o70UUyfjpPFTgipDWlcR5z6631c+YRXR4uSItt4520HAmwGdm/WY9lYLKRzRy4Bmq+2AXg7oaUh7b3c0dx7SsFbbtl9Cuj20TTI7R8PRDGk43I9HSy4LoL+az+rJOMq0R5eYE4gS1/o/nYzpQnZnIq2pqSTfGxzNEcmMM6KZsZ7b4LtWk2BXufVcTpV6a43pdEY9aXpi9SxhWtlS6SnWfwO+d1p72FJqQbrSf5q++2JaoUWGaXOCmLwXUK/VIg5ohcD3DQdJPQXWJ646nDB+6vWyo1Kr9SuobIVj8HGNXTOysAdVv2rmcHf56vse7y5L0UrsjbeWkrnt6QhOQ1H/dmSH0BpWe73A5txs+sWRJIGgKr6lMA2BVU8Oqqa8YEDqOKrk/dIJLY9jBberLlbpMoKqVXN6YXgbswOPU6XhcpfydZHTl0M4+bbf8dvcycDVfRLoAb5woqKioqKioqKioqKesv4B5edfMv7zYwEAAAAASUVORK5CYII="; 
-		l('icon',h);
-		l('apple-touch-icon',h);
 
 		function x() {
 			var s = this;
@@ -271,24 +209,6 @@
 			return document.getElementById(n);
 		}
 
-		// random
-		function r(n) {
-			return Math.floor(Math.random() * n)
-		}
-
-		// distance between two points
-		function d(x, y, j, l) {
-			var xs = j - x;
-			var ys = l - y;
-			return Math.sqrt(ys * ys + xs * xs);
-		}
-
-		// start (or restart) draw interval
-		function sD() {
-			if (tid) clearInterval(tid);
-			tid = setInterval(dr,50);
-		}
-
 		function s() {
 			// common pieces
 			var i=0,a,
@@ -297,10 +217,10 @@
 				m='\'>',
 				e='</div>',
 				z='<br>';
-				
+
 			// switches
 			for (i=1;i<7;i++)
-				$('sw')[v] += 
+				$('sw')[v] +=
 				b+'swi l '+'  m  m  '[i]+'\'><input id=\'DO'+i+'\' type=\'checkbox\' onclick=\'st()\'><label for=\'DO'+i+'\'></label>DO'+i+e;
 
 			// states
@@ -310,106 +230,23 @@
 				$('sts')[v] += b+'i '+t+m+(i?i:'input')+e+ //<div class='i t'>input</div> || <div class='i'>1</div>
 				bb+'D'+m+(i?'?':'D')+e+ //<div class='t'>D</div> || <div id='I1.D'>?</div>
 				(i<5?
-				bb+'V'+m+(i?'?':'V')+e+ //<div class='t'>V</div> || <div id='I1.V'>?</div> 
+				bb+'V'+m+(i?'?':'V')+e+ //<div class='t'>V</div> || <div id='I1.V'>?</div>
 				b+t+(i?'':' e')+d+i+'.I'+m+(i?'?':'I (mA)')+e:'')+ // //<div class='t e'>I (mA)</div> || <div id='I1.I'>?</div>
 				z;
 			}
-			
+
 			// configuration page
 			for (i=0;i<6;i++) {
-				d='\''+'idgsmp'[i]+'\''; 
+				d='\''+'idgsmp'[i]+'\'';
 				$('cf')[v] += b+'line'+(i>4?' spa':'')+m+ //<div class='line[ spa]'>
 					'<input id='+d+' name='+d+(i>4?' type=\'password\'':'')+'>'+ // <input id='i' name='i'[ type='password']>
 					'<label for='+d+'>'+['IP','DNS','Gateway','Subnet','MAC','Password'][i]+' : </label>'+ // <label for='i'>IP : </label>
 					e+z; // </div>
 			}
 			$('cf')[v] += z+b+'bt l\' onclick=\'cf()\'>cancel'+e+b+'bt r\' onclick=\'sv()\'>save'+e+z;
-			
+
 			// first poll for config
 			pl(1);
-			
-			// start draw
-			sD();
-		}
-
-		function f(p) {
-			var ts = new Date().getTime();
-			var x = p.x, y = p.y;
-			
-			if (!p.ls) p.ls = ts;
-			var t = ts-p.ls;
-			
-			var d = t*p.s/100 -p.p;
-			x += Math.sin(d)*p.a;
-			y += Math.sin(d)*p.b;
-				
-			return {x:x, y:y};
-		}
-
-		// draw background
-		function dr() {
-			var w = window.innerWidth,
-				h = window.innerHeight,
-				q = 200, // 1 point every nxn square
-				x, y, j, l, t, i, 
-				o, g, c;
-
-			try {
-				g = $('c');
-				c = g.getContext('2d');
-				o = (typeof g.style.opacity !== 'undefined');
-				if (o) g.style.opacity = .3;
-			} catch (e) {
-				return
-			}
-			
-			c.canvas.width = w;
-			c.canvas.height = h;
-
-			if (!p) {
-				p = [];
-				for (x = -1; x <= w / q; x++) {
-					for (y = -1; y <= h / q; y++) {
-						i = {x:q * x + r(q), y:q * y + r(q), r:r(10) + 4, a:r(13), b:r(13), p:r(100), w:r(10000), s:r(10)/100, l:[]};
-						p.push(i);
-						k++;
-					}
-				}
-				for (i = 0; i < k; i++) {
-					x = p[i].x;
-					y = p[i].y;
-					for (t = i + 1; t < k; t++) {
-						j = p[t].x;
-						l = p[t].y;
-						if (d(x, y, j, l) < q * 2)
-							p[i].l.push(p[t]); // line to..
-					}
-				}
-			}
-			c.strokeStyle =
-			c.fillStyle = o?'#fff':'#7194b8';//'#7998af';
-			for (i = 0; i < k; i++) {
-				x = f(p[i]).x;
-				y = f(p[i]).y;
-				for (t = 0; t<p[i].l.length; t++) {
-					j = f(p[i].l[t]).x;
-					l = f(p[i].l[t]).y;
-					c.moveTo(x, y);
-					c.lineTo(j, l);
-				}
-				c.stroke();
-				c.beginPath();
-				c.arc(x, y, p[i].r, 0, 2 * Math.PI, false);
-				c.fill();
-			}
-		}
-		
-		// call draw on resize, after 100ms
-		window.onresize = function() {
-			p = 0;
-			k = 0;
-			clearInterval(tid);
-			tid = setInterval(sD,1000);
 		}
 
 		// show error for n seconds (default 5s, 0:stay), f: full text
@@ -428,19 +265,19 @@
 		// request
 		function rq(i, u) {
 			if (bl) return; // no more requests
-			//console.log("rq: "+u);			
+			//console.log("rq: "+u);
 			var a = window['x' + i].r;
 			//u = 'http://192.168.1.243'+u;
 			a.open('GET', u+"&"+new Date().getTime()+"=", true);
 			a.send(null);
 		}
-		
+
 		// stop poll
 		function sp() {
 			if (tip) clearTimeout(tip);
 			if (x1) x1.r.abort();
 		}
-		
+
 		// poll. now or wait?
 		function pl(n) {
 			//console.log("next state rq in "+(n ? 100 : 1000)+"ms");
@@ -450,7 +287,7 @@
 				rq(1, cg?'/api/state?':'/config?')
 			}, n ? 10 : 1000);
 		}
-		
+
 		// password
 		function ps() {
 			if ($('pw').value == cg.p) {
@@ -484,7 +321,7 @@
 				}
 				r += l+'='+f.value+'&';
 			}
-			
+
 			lip = $('i').value;
 			rq(2, r);
 			bl = true; // no more requests
@@ -493,8 +330,8 @@
 		// update view
 		function uv() {
 			for (var i=0;i<4;i++)
-				$(['ps','cb','vw','cf'][i]).style.display = 
-				[!iv ? 'block' : 'none', iv ? 'block' : 'none', cv || !iv ? 'none' : 'block', !cv || !iv ? 'none' : 'block'][i];				
+				$(['ps','cb','vw','cf'][i]).style.display =
+				[!iv ? 'block' : 'none', iv ? 'block' : 'none', cv || !iv ? 'none' : 'block', !cv || !iv ? 'none' : 'block'][i];
 		}
 
 		// switch
@@ -507,10 +344,10 @@
 			var i,r = '/api/set?';
 			for (i=1; i<=6; i++)
 				r += 'DO'+i+'='+($('DO'+i).checked?'1':'0')+'&';
-				
+
 			rq(3, r+(as?('AO1=' + as):''));
 
-			r = "";			
+			r = "";
 			for (i=1; i<=6; i++)
 				r += 'DO'+i+':'+($('DO'+i).checked?'1':'0')+' ';
 		}
@@ -536,11 +373,11 @@
 				cg = j;
 				for (i in j)
 					$(i).value = j[i];
-				
+
 				iv = j.p?false:true;
 				uv();
 				if (iv) pl(1);
-				return;	
+				return;
 			}
 			pl();
 		}
@@ -570,7 +407,7 @@
 			$('cf').style.display = 'none';
 			$('vw').style.display = 'none';
 			$('sv').style.display = 'block';
-			
+
 			setInterval(function(){
 				window.location = 'http://'+lip;
 				//console.log("reload to location:"+lip)
@@ -582,7 +419,7 @@
 			bl = false; // resume requests
 			pl(1);
 		}
-		
+
 		x3.o = function() {
 			as = '';
 		}
@@ -591,14 +428,11 @@
 </head>
 
 <body onload='s()'>
-
-	<div class='bg a'>
-		<canvas id='c'></canvas>
-	</div>
 	<div class='cont a'>
 		<div class='body' align='center'>
 			<div class='title'>
-				<img src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFMAAAAYCAMAAACx8zGdAAAAilBMVEUAAAD////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////2N2iNAAAALXRSTlMAyfr+1L+CCQ/w6M/0pHZiPN25bjIfFrF+aVdLGwPj2MWbljeQUkArqltGiiaSsGwxAAACbElEQVQ4y4VU66KyIBAExDDvmll5SzuVduH9X+9jRQ3Ic775E4zLsDu7hDpy5hFaRx6mtKHpiYl15LYY4xZ7AvhQqmE/F/EpPb4Xwuacb1YV75TPwBnacA1kOfPyZ66JFM3jimIdaBpZxA3QCsJiV+Xw/i9Nx9MVdg9uYpshZN5EfpBAX97L6lsTc0AaPuMyhGtPBezd4zOO7/EzxOMO/ciar0UcR8EW1n6PfsNYeJLNzjaTJhASO9gOGVeqZOKQxT20Dnm//dkz/wW1dwsxVf0U0soIhFw2nOVOzkzNFHqgzcANEgtV6gLX7vnO5FyGBu4Dr8EBawqd24Cp30GRI6eklmQiuAdKV/pewligL03j7k4wFzRpTeFX4eiADlNN5vnuv5onxXMrUbNJVzSD6W2xA7Ztm3brmnfBnGGxx55FWtrD0gJuLU/gjpNlc7eOpp8og7mH9vZ8BIx7TkATHDDfezs7Ve0F3tWce6R30uec5HJNmk/u3ujKYPwdkdEpDQzedalzVFDxpJnMrlv8MDpgvbVY+bSfGhdBoY6u+RLcYfJhepKedKgV0qkaWomazERZI5gr0nGDsJs5HFsHvhjhmEsECjfIJhiwBekrNRbw4DvZZUsI1BP/BpfImGrqzJl7sH0hEzHQ/pLpESQbNvbvDKLupXTq/DEQiOtqCj/brsjrqghGDqNvhBzQhj1j8YaC5NyGvTvuONkSPsKuUQ99VjnK0ApeXMKHwjR7c5uruI4c1rgArSMiapSrWv5wF57O/Gn7ib2h31ClSxQxByO7eOfk3G4qtQcBTZrEu2ToLzg7+5wk9FDMbf4H4gF6cimR9uwAAAAASUVORK5CYII='>
+				IONO
+				<!-- <img src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFMAAAAYCAMAAACx8zGdAAAAclBMVEUAAAD///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////9eWEHEAAAAJXRSTlMAyNaBbPo0vwkP8OjPKfSkdmI83bkfFrFXSxvjm5aQUkCqW0aK9yYr6wAAAjNJREFUOMuFlOmCgyAMhAEF8T7rrT3z/q+4hkoL1G2/XzIbx2TIlsycQUmOaYuGTazx5fZcxlSRbNBuMMvEsumNl76EAAC8Q8cLAw0VxAML/nrnkWltKn955mAiSnBgI1ZVsanR0zfPMAEL/wYukSDE/RIX+HI6XIbx05MC0hT3aigC9OzxHHv3qrpU94KqExHPmde+qso8wufslerx4LXQyU67pyAaH49XAcaUUr2U/GepaoP3WWYPnH1+CfvU983aWIFi/4Rsw1a6ng3egbUDZ2ysMKUFP3sC39ViSa6QoW4RYjS9rXkY6mdRGVpV9abdSHNw7wOuBfnhSeZNWbTXXr5iyqTbZ3Lfn396+kbmUJvdNAee+d677GgQBGw+9rzo0E80AU5Zio+oHfaJmrdHhkXHngL3XuKKA+hFazmWrwd5Up3UeNpIR917ad9kBsBbouDTu/eE+CpVi5arpCxkDLiKFmyTqt2zfqfeqQTA/oe6AXK3tBIHDW3PhzJQiN0hUQmpQRuzdMwA3EbltCkrsTlj2dldjijc/7I6aSK5oV33S7AJnB+NHvQSdpZBiilx1WoT6s4TPD6ISwVoeja7hEmq+2P4HC9DSNrblT+/pbRo7lsy9rnSKPmkAIQWqZSVx8xrOMWg4BEHHWXqakySAx7wJMPBrHjbAExWpVFLy8kxJQeDWJjrE790pnU/eteeyX+MDWi4uxhiSVjNqDead5CzeqqTRZBvhH7A6pp1vRb+ADG1Y/GH76nLAAAAAElFTkSuQmCC'> -->
 				<div id='cb' class='bt r' onclick='cf()'>
 					<div></div>
 					<div></div>
@@ -606,7 +440,7 @@
 				</div>
 			</div>
 			<div id='sv' class='p'>
-				Saving configuration, please wait... 
+				Saving configuration, please wait...
 			</div>
 			<div id='ps' class='p'>
 				<div class='line'>
@@ -627,8 +461,8 @@
 				</div>
 				<hr />
 				<div class='ao l'>
-					<label for='AO1'>AO1 : </label>
-					<input id='AO1' name='AO1' onkeypress='{if (event.keyCode==13)st(1)}'>&nbsp;V
+					<label for='AO1'>AO1 :&nbsp;</label>
+					<input id='AO1' name='AO1' onkeypress='{if (event.keyCode==13)st(1)}'> V
 				</div>
 				<div class='bt c r' onclick='st(1)'>set</div>
 				<br>
