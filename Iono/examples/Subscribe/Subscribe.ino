@@ -1,11 +1,11 @@
-/*  
+/*
   Subscribe.ino - Arduino sketch showing the use of the Iono library
 
-    Copyright (C) 2014-2016 Sfera Labs S.r.l. - All rights reserved.
+    Copyright (C) 2014-2018 Sfera Labs S.r.l. - All rights reserved.
 
     For information, see the iono web site:
-    http://www.sferalabs.cc/iono
-  
+    http://www.sferalabs.cc/iono-arduino
+
   This code is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
   License as published by the Free Software Foundation; either
@@ -17,16 +17,16 @@
 
 void setup() {
   Serial.begin(9600);
-  
-  /* 
+
+  /*
   / Call onDI1Change() every time
   / DI1 changes value and is stable
   / for 500ms
   */
   Iono.subscribeDigital(DI1, 500, &onDI1Change);
-  
+
   /*
-  / Call onAV2Change() every time 
+  / Call onAV2Change() every time
   / the voltage on AV2 changes of
   / a value >= 1V, without any delay
   */
