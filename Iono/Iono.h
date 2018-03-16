@@ -1,11 +1,11 @@
-/* 
+/*
   Iono.h - Arduino library for the control of iono
 
-    Copyright (C) 2014-2017 Sfera Labs S.r.l. - All rights reserved.
+    Copyright (C) 2014-2018 Sfera Labs S.r.l. - All rights reserved.
 
     For information, see the iono web site:
     http://www.sferalabs.cc/iono-arduino
-  
+
   This code is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
   License as published by the Free Software Foundation; either
@@ -20,6 +20,12 @@
 #include "Arduino.h"
 #else
 #include "WProgram.h"
+#endif
+
+#if defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_SAMD_ZERO)
+#define IONO_ARDUINO 1
+#else
+#define IONO_MKR 1
 #endif
 
 #define DO1 0
