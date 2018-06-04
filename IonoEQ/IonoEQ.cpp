@@ -1,5 +1,5 @@
 /*
-  IonoHQ.cpp - Arduino library for Iono MKR's seismic sensor
+  IonoEQ.cpp - Arduino library for Iono MKR's seismic sensor
 
     Copyright (C) 2018 Sfera Labs S.r.l. - All rights reserved.
 
@@ -13,30 +13,30 @@
   See file LICENSE.txt for further informations on licensing terms.
 */
 
-#include "IonoHQ.h"
+#include "IonoEQ.h"
 
-void IonoHQClass::begin() {
+void IonoEQClass::begin() {
   Wire.begin();
   Wire.setClock(400000);
 }
 
-void IonoHQClass::attachShutoffISR(void (*ISR)(void)) {
+void IonoEQClass::attachShutoffISR(void (*ISR)(void)) {
   attachInterrupt(digitalPinToInterrupt(9), ISR, FALLING);
 }
 
-void IonoHQClass::detachShutoffISR() {
+void IonoEQClass::detachShutoffISR() {
   detachInterrupt(digitalPinToInterrupt(9));
 }
 
-void IonoHQClass::attachProcessingISR(void (*ISR)(void)) {
+void IonoEQClass::attachProcessingISR(void (*ISR)(void)) {
   attachInterrupt(digitalPinToInterrupt(8), ISR, FALLING);
 }
 
-void IonoHQClass::detachProcessingISR() {
+void IonoEQClass::detachProcessingISR() {
   detachInterrupt(digitalPinToInterrupt(8));
 }
 
-int32_t IonoHQClass::readD7S(byte addrH, byte addrL, int n) {
+int32_t IonoEQClass::readD7S(byte addrH, byte addrL, int n) {
   Wire.beginTransmission(0x55);
   Wire.write(addrH);
   Wire.write(addrL);
@@ -56,7 +56,7 @@ int32_t IonoHQClass::readD7S(byte addrH, byte addrL, int n) {
   return val;
 }
 
-byte IonoHQClass::writeD7S(byte addrH, byte addrL, byte data) {
+byte IonoEQClass::writeD7S(byte addrH, byte addrL, byte data) {
   byte ret = 0;
   Wire.beginTransmission(0x55);
   ret += Wire.write(addrH);
@@ -66,7 +66,7 @@ byte IonoHQClass::writeD7S(byte addrH, byte addrL, byte data) {
   return ret;
 }
 
-int32_t IonoHQClass::adjust(int32_t val) {
+int32_t IonoEQClass::adjust(int32_t val) {
   if (val < 0) {
     return -2147483648l;
   }
@@ -76,7 +76,7 @@ int32_t IonoHQClass::adjust(int32_t val) {
 
 // Settings
 
-int16_t IonoHQClass::readState() {
+int16_t IonoEQClass::readState() {
   int32_t v = readD7S(0x10, 0x00, 1);
   if (v < 0) {
     return v;
@@ -84,7 +84,7 @@ int16_t IonoHQClass::readState() {
   return v & 0b111;
 }
 
-int16_t IonoHQClass::readAxisState() {
+int16_t IonoEQClass::readAxisState() {
   int32_t v = readD7S(0x10, 0x01, 1);
   if (v < 0) {
     return v;
@@ -92,7 +92,7 @@ int16_t IonoHQClass::readAxisState() {
   return v & 0b11;
 }
 
-int16_t IonoHQClass::readEvent() {
+int16_t IonoEQClass::readEvent() {
   int32_t v = readD7S(0x10, 0x02, 1);
   if (v < 0) {
     return v;
@@ -100,7 +100,7 @@ int16_t IonoHQClass::readEvent() {
   return v & 0b1111;
 }
 
-int16_t IonoHQClass::readMode() {
+int16_t IonoEQClass::readMode() {
   int32_t v = readD7S(0x10, 0x03, 1);
   if (v < 0) {
     return v;
@@ -108,11 +108,11 @@ int16_t IonoHQClass::readMode() {
   return v & 0b111;
 }
 
-boolean IonoHQClass::writeMode(byte data) {
+boolean IonoEQClass::writeMode(byte data) {
   return writeD7S(0x10, 0x03, data & 0b111) == 3;
 }
 
-int16_t IonoHQClass::readCtrl() {
+int16_t IonoEQClass::readCtrl() {
   int32_t v = readD7S(0x10, 0x04, 1);
   if (v < 0) {
     return v;
@@ -120,11 +120,11 @@ int16_t IonoHQClass::readCtrl() {
   return (v >> 3) & 0b1111;
 }
 
-boolean IonoHQClass::writeCtrl(byte data) {
+boolean IonoEQClass::writeCtrl(byte data) {
   return writeD7S(0x10, 0x04, (data & 0b1111) << 3) == 3;
 }
 
-int16_t IonoHQClass::readClearCommand() {
+int16_t IonoEQClass::readClearCommand() {
   int32_t v = readD7S(0x10, 0x05, 1);
   if (v < 0) {
     return v;
@@ -132,70 +132,70 @@ int16_t IonoHQClass::readClearCommand() {
   return v & 0b1111;
 }
 
-boolean IonoHQClass::writeClearCommand(byte data) {
+boolean IonoEQClass::writeClearCommand(byte data) {
   return writeD7S(0x10, 0x05, data & 0b1111) == 3;
 }
 
 // Current
 
-int32_t IonoHQClass::readCurrentSI() {
+int32_t IonoEQClass::readCurrentSI() {
   return readD7S(0x20, 0x00, 2);
 }
 
-int32_t IonoHQClass::readCurrentPGA() {
+int32_t IonoEQClass::readCurrentPGA() {
   return readD7S(0x20, 0x02, 2);
 }
 
 // Latest
 
-int32_t IonoHQClass::readLatestOffsetX(int n) {
+int32_t IonoEQClass::readLatestOffsetX(int n) {
   return adjust(readD7S(0x30 + n - 1, 0x00, 2));
 }
 
-int32_t IonoHQClass::readLatestOffsetY(int n) {
+int32_t IonoEQClass::readLatestOffsetY(int n) {
   return adjust(readD7S(0x30 + n - 1, 0x02, 2));
 }
 
-int32_t IonoHQClass::readLatestOffsetZ(int n) {
+int32_t IonoEQClass::readLatestOffsetZ(int n) {
   return adjust(readD7S(0x30 + n - 1, 0x04, 2));
 }
 
-int32_t IonoHQClass::readLatestTemp(int n) {
+int32_t IonoEQClass::readLatestTemp(int n) {
   return adjust(readD7S(0x30 + n - 1, 0x06, 2));
 }
 
-int32_t IonoHQClass::readLatestSI(int n) {
+int32_t IonoEQClass::readLatestSI(int n) {
   return readD7S(0x30 + n - 1, 0x08, 2);
 }
 
-int32_t IonoHQClass::readLatestPGA(int n) {
+int32_t IonoEQClass::readLatestPGA(int n) {
   return readD7S(0x30 + n - 1, 0x0A, 2);
 }
 
 // SI Ranked
 
-int32_t IonoHQClass::readRankedOffsetX(int n) {
+int32_t IonoEQClass::readRankedOffsetX(int n) {
   return adjust(readD7S(0x35 + n - 1, 0x00, 2));
 }
 
-int32_t IonoHQClass::readRankedOffsetY(int n) {
+int32_t IonoEQClass::readRankedOffsetY(int n) {
   return adjust(readD7S(0x35 + n - 1, 0x02, 2));
 }
 
-int32_t IonoHQClass::readRankedOffsetZ(int n) {
+int32_t IonoEQClass::readRankedOffsetZ(int n) {
   return adjust(readD7S(0x35 + n - 1, 0x04, 2));
 }
 
-int32_t IonoHQClass::readRankedTemp(int n) {
+int32_t IonoEQClass::readRankedTemp(int n) {
   return adjust(readD7S(0x35 + n - 1, 0x06, 2));
 }
 
-int32_t IonoHQClass::readRankedSI(int n) {
+int32_t IonoEQClass::readRankedSI(int n) {
   return readD7S(0x35 + n - 1, 0x08, 2);
 }
 
-int32_t IonoHQClass::readRankedPGA(int n) {
+int32_t IonoEQClass::readRankedPGA(int n) {
   return readD7S(0x35 + n - 1, 0x0A, 2);
 }
 
-IonoHQClass IonoHQ;
+IonoEQClass IonoEQ;

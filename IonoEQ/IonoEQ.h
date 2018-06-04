@@ -1,5 +1,5 @@
 /*
-  IonoHQ.h - Arduino library for Iono MKR's seismic sensor
+  IonoEQ.h - Arduino library for Iono MKR's seismic sensor
 
     Copyright (C) 2018 Sfera Labs S.r.l. - All rights reserved.
 
@@ -13,8 +13,8 @@
   See file LICENSE.txt for further informations on licensing terms.
 */
 
-#ifndef IonoHQ_h
-#define IonoHQ_h
+#ifndef IonoEQ_h
+#define IonoEQ_h
 
 #if defined(ARDUINO) && ARDUINO >= 100
 #include "Arduino.h"
@@ -24,7 +24,7 @@
 
 #include <Wire.h>
 
-class IonoHQClass
+class IonoEQClass
 {
   public:
     void begin();
@@ -69,6 +69,6 @@ class IonoHQClass
     int32_t readRankedPGA(int n);
 };
 
-extern IonoHQClass IonoHQ;
+extern IonoEQClass IonoEQ;
 
 #endif

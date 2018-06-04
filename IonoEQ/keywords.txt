@@ -1,4 +1,4 @@
-IonoHQ	KEYWORD1
+IonoEQ	KEYWORD1
 begin	KEYWORD2
 attachShutoffISR	KEYWORD2
 detachShutoffISR	KEYWORD2
