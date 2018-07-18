@@ -237,13 +237,16 @@ void IonoClass::check(CallbackMap *input) {
     float val = read((*input).pin);
     unsigned long ts = millis();
 
-    if (val != (*input).lastValue) {
+    float diff = (*input).lastValue - val;
+    diff = abs(diff);
+    if (diff >= (*input).minVariation) {
+      (*input).lastValue = val;
       (*input).lastTS = ts;
     }
 
     if ((ts - (*input).lastTS) >= (*input).stableTime) {
       if (val != (*input).value) {
-        float diff = (*input).value - val;
+        diff = (*input).value - val;
         diff = abs(diff);
         if (diff >= (*input).minVariation) {
           (*input).value = val;
@@ -252,7 +255,6 @@ void IonoClass::check(CallbackMap *input) {
       }
     }
 
-    (*input).lastValue = val;
   }
 }
 
