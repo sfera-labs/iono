@@ -69,7 +69,7 @@ class IonoClass
 
   private:
     uint8_t _pinMap[21];
-
+    float _ao1_val;
     typedef struct CallbackMap
     {
       uint8_t pin;
@@ -91,6 +91,7 @@ class IonoClass
     CallbackMap _o4;
     CallbackMap _o5;
     CallbackMap _o6;
+    CallbackMap _a1;
 
     void check(CallbackMap *input);
 };

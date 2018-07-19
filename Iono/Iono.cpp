@@ -113,6 +113,8 @@ IonoClass::IonoClass() {
 
   analogReadResolution(ANALOG_READ_BITS);
   analogWriteResolution(ANALOG_WRITE_BITS);
+
+  _ao1_val = 0;
 }
 
 void IonoClass::subscribeDigital(uint8_t pin, unsigned long stableTime, Callback *callback) {
@@ -203,6 +205,10 @@ void IonoClass::subscribeAnalog(uint8_t pin, unsigned long stableTime, float min
       input = &_i4;
       break;
 
+    case AO1:
+      input = &_a1;
+      break;
+
     default:
       return;
   }
@@ -228,6 +234,7 @@ void IonoClass::process() {
   check(&_o4);
   check(&_o5);
   check(&_o6);
+  check(&_a1);
 }
 
 void IonoClass::check(CallbackMap *input) {
@@ -269,6 +276,10 @@ float IonoClass::read(uint8_t pin) {
   if (pin == AI1 || pin == AI2 || pin == AI3 || pin == AI4) {
     return analogRead(_pinMap[pin]) * IONO_AI_MAX / ANALOG_READ_MAX;
   }
+
+  if (pin == AO1) {
+    return _ao1_val;
+  }
 }
 
 void IonoClass::write(uint8_t pin, float value) {
@@ -278,6 +289,7 @@ void IonoClass::write(uint8_t pin, float value) {
 
   else if (pin == AO1) {
     analogWrite(_pinMap[pin], value * ANALOG_WRITE_MAX / IONO_AO_MAX);
+    _ao1_val = value;
   }
 }
 
