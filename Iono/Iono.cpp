@@ -175,9 +175,8 @@ void IonoClass::subscribeDigital(uint8_t pin, unsigned long stableTime, Callback
   (*input).stableTime = stableTime;
   (*input).minVariation = 0;
   (*input).callback = callback;
-  (*input).lastValue = read(pin);
-  (*input).value = read(pin);
-  (*input).lastTS = 0;
+  (*input).value = -1;
+  (*input).lastTS = millis();
 }
 
 void IonoClass::subscribeAnalog(uint8_t pin, unsigned long stableTime, float minVariation, Callback *callback) {
@@ -212,9 +211,8 @@ void IonoClass::subscribeAnalog(uint8_t pin, unsigned long stableTime, float min
   (*input).stableTime = stableTime;
   (*input).minVariation = minVariation;
   (*input).callback = callback;
-  (*input).lastValue = read(pin);
-  (*input).value = read(pin);
-  (*input).lastTS = 0;
+  (*input).value = -100;
+  (*input).lastTS = millis();
 }
 
 void IonoClass::process() {
@@ -237,24 +235,21 @@ void IonoClass::check(CallbackMap *input) {
     float val = read((*input).pin);
     unsigned long ts = millis();
 
-    float diff = (*input).lastValue - val;
-    diff = abs(diff);
-    if (diff >= (*input).minVariation) {
-      (*input).lastValue = val;
-      (*input).lastTS = ts;
-    }
-
-    if ((ts - (*input).lastTS) >= (*input).stableTime) {
-      if (val != (*input).value) {
-        diff = (*input).value - val;
-        diff = abs(diff);
-        if (diff >= (*input).minVariation) {
+    if ((*input).value != val) {
+      float diff = (*input).value - val;
+      diff = abs(diff);
+      if (diff >= (*input).minVariation) {
+        if ((ts - (*input).lastTS) >= (*input).stableTime) {
           (*input).value = val;
+          (*input).lastTS = ts;
           (*input).callback((*input).pin, val);
         }
+      } else {
+        (*input).lastTS = ts;
       }
+    } else {
+      (*input).lastTS = ts;
     }
-
   }
 }
 

@@ -76,7 +76,6 @@ class IonoClass
       unsigned long stableTime;
       float minVariation;
       Callback *callback;
-      float lastValue;
       float value;
       unsigned long lastTS;
     } CallbackMap;
