@@ -111,11 +111,25 @@ IonoClass::IonoClass() {
   analogReference(EXTERNAL);
 #endif
 
+#ifndef ARDUINO_ARCH_AVR
   analogReadResolution(ANALOG_READ_BITS);
   analogWriteResolution(ANALOG_WRITE_BITS);
+#endif
 
   _ao1_val = 0;
 }
+
+#ifdef IONO_MKR
+void IonoClass::setBYP(uint8_t pin, bool value) {
+  if (pin == DI5) {
+    _pinMap[DI5] = value ? 0 : 7;
+    pinMode(_pinMap[DI5], INPUT);
+  } else if (pin == DI5) {
+    _pinMap[DI6] = value ? 1 : 5;
+    pinMode(_pinMap[DI6], INPUT);
+  }
+}
+#endif
 
 void IonoClass::subscribeDigital(uint8_t pin, unsigned long stableTime, Callback *callback) {
   CallbackMap* input;

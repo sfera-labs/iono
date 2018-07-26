@@ -60,6 +60,9 @@ class IonoClass
   public:
     typedef void Callback(uint8_t pin, float value);
     IonoClass();
+#ifdef IONO_MKR
+    void setBYP(uint8_t pin, bool value);
+#endif
     float read(uint8_t pin);
     void write(uint8_t pin, float value);
     void flip(uint8_t pin);
