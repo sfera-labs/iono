@@ -55,6 +55,10 @@
 #define DI6 19
 #define AO1 20
 
+#ifdef IONO_MKR
+#define PIN_TXEN 4
+#endif
+
 class IonoClass
 {
   public:
