@@ -39,7 +39,12 @@ word IonoModbusRtuSlaveClass::_di6count = 0;
 void IonoModbusRtuSlaveClass::begin(byte unitAddr, unsigned long baud, unsigned long config, unsigned long diDebounceTime) {
   SERIAL_PORT_HARDWARE.begin(baud, config);
   ModbusRtuSlave.setCallback(&IonoModbusRtuSlaveClass::onRequest);
+
+#ifdef PIN_TXEN
   ModbusRtuSlave.begin(unitAddr, &SERIAL_PORT_HARDWARE, baud, PIN_TXEN);
+#else
+  ModbusRtuSlave.begin(unitAddr, &SERIAL_PORT_HARDWARE, baud, 0);
+#endif
 
   Iono.subscribeDigital(DI1, diDebounceTime, &onDIChange);
   Iono.subscribeDigital(DI2, diDebounceTime, &onDIChange);
