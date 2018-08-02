@@ -59,6 +59,12 @@
 #define PIN_TXEN 4
 #endif
 
+#define LINK_FOLLOW 1
+#define LINK_INVERT 2
+#define LINK_FLIP_T 3
+#define LINK_FLIP_H 4
+#define LINK_FLIP_L 5
+
 class IonoClass
 {
   public:
@@ -72,6 +78,7 @@ class IonoClass
     void flip(uint8_t pin);
     void subscribeDigital(uint8_t pin, unsigned long stableTime, Callback *callback);
     void subscribeAnalog(uint8_t pin, unsigned long stableTime, float minVariation, Callback *callback);
+    void linkDiDo(uint8_t dix, uint8_t dox, uint8_t mode, unsigned long stableTime);
     void process();
 
   private:
@@ -83,6 +90,8 @@ class IonoClass
       unsigned long stableTime;
       float minVariation;
       Callback *callback;
+      uint8_t linkedPin;
+      uint8_t linkMode;
       float value;
       unsigned long lastTS;
     } CallbackMap;

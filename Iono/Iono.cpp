@@ -235,6 +235,51 @@ void IonoClass::subscribeAnalog(uint8_t pin, unsigned long stableTime, float min
   (*input).lastTS = millis();
 }
 
+void IonoClass::linkDiDo(uint8_t dix, uint8_t dox, uint8_t mode, unsigned long stableTime) {
+  if (dox < DO1 || dox > DO6) {
+    return;
+  }
+
+  CallbackMap* input;
+
+  switch (dix) {
+    case DI1:
+      input = &_i1;
+      break;
+
+    case DI2:
+      input = &_i2;
+      break;
+
+    case DI3:
+      input = &_i3;
+      break;
+
+    case DI4:
+      input = &_i4;
+      break;
+
+    case DI5:
+      input = &_i5;
+      break;
+
+    case DI6:
+      input = &_i6;
+      break;
+
+    default:
+      return;
+  }
+
+  (*input).pin = dix;
+  (*input).stableTime = stableTime;
+  (*input).minVariation = 0;
+  (*input).linkedPin = dox;
+  (*input).linkMode = mode;
+  (*input).value = -1;
+  (*input).lastTS = millis();
+}
+
 void IonoClass::process() {
   check(&_i1);
   check(&_i2);
@@ -252,7 +297,7 @@ void IonoClass::process() {
 }
 
 void IonoClass::check(CallbackMap *input) {
-  if ((*input).callback != NULL) {
+  if ((*input).callback != NULL || (*input).linkedPin >= 0) {
     float val = read((*input).pin);
     unsigned long ts = millis();
 
@@ -263,7 +308,32 @@ void IonoClass::check(CallbackMap *input) {
         if ((ts - (*input).lastTS) >= (*input).stableTime) {
           (*input).value = val;
           (*input).lastTS = ts;
-          (*input).callback((*input).pin, val);
+          if ((*input).callback != NULL) {
+            (*input).callback((*input).pin, val);
+          }
+          if ((*input).linkedPin >= 0) {
+            switch ((*input).linkMode) {
+              case LINK_FOLLOW:
+                write((*input).linkedPin, val);
+                break;
+              case LINK_INVERT:
+                write((*input).linkedPin, val == HIGH ? LOW : HIGH);
+                break;
+              case LINK_FLIP_T:
+                flip((*input).linkedPin);
+                break;
+              case LINK_FLIP_H:
+                if (val == HIGH) {
+                  flip((*input).linkedPin);
+                }
+                break;
+              case LINK_FLIP_L:
+                if (val == LOW) {
+                  flip((*input).linkedPin);
+                }
+                break;
+            }
+          }
         }
       } else {
         (*input).lastTS = ts;
