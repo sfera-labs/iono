@@ -13,15 +13,15 @@
   See file LICENSE.txt for further informations on licensing terms.
 */
 
-#ifdef ARDUINO_SAMD_ZERO
+#include <Iono.h>
+#include <IonoModbusRtuSlave.h>
+
+#ifdef ARDUINO_ARCH_SAMD
 #include <FlashAsEEPROM.h>
 #include <FlashStorage.h>
 #else
 #include <EEPROM.h>
 #endif
-
-#include <IonoModbusRtuSlave.h>
-#include <Iono.h>
 
 #define DELAY  25                           // the debounce delay in milliseconds
 #define BOOT_CONSOLE_TIMEOUT_MILLIS 15000   // if 5 consecutive spaces are received within this time interval after boot, enter console mode
@@ -281,7 +281,7 @@ boolean writeEepromConfig(byte speed, byte parity, byte address, char *rules) {
       checksum ^= rules[a];
     }
     EEPROM.write(9, checksum);
-#ifdef ARDUINO_SAMD_ZERO
+#ifdef ARDUINO_ARCH_SAMD
     EEPROM.commit();
 #endif
     return true;
@@ -293,7 +293,7 @@ boolean writeEepromConfig(byte speed, byte parity, byte address, char *rules) {
 boolean readEepromConfig(byte *speedp, byte *parityp, byte *addressp, char *rulesp) {
   byte checksum = 7;
 
-#ifdef ARDUINO_SAMD_ZERO
+#ifdef ARDUINO_ARCH_SAMD
   if (!EEPROM.isValid()) {
     return false;
   }
@@ -322,12 +322,11 @@ boolean getEEPROMConfig() {
 }
 
 void softReset() {
-#ifdef ARDUINO_SAMD_ZERO
+#ifdef ARDUINO_ARCH_SAMD
   NVIC_SystemReset();
 #else
   asm volatile ("  jmp 0");
 #endif
-
 }
 
 void printlnProgMemString(const char* s) {
