@@ -44,10 +44,8 @@ const PROGMEM char CONSOLE_NEW_CONFIG[]  = {"New configuration:"};
 const PROGMEM char CONSOLE_ERROR[]  = {"Error"};
 const PROGMEM char CONSOLE_SAVED[]  = {"Saved"};
 
-#ifdef SERIAL_PORT_MONITOR
-#define consolePort SERIAL_PORT_MONITOR
-#else
-#define consolePort SERIAL_PORT_HARDWARE
+#ifndef SERIAL_PORT_MONITOR
+#define SERIAL_PORT_MONITOR SERIAL_PORT_HARDWARE
 #endif
 
 const long SPEED_VALUE[] = {0, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200};
@@ -68,9 +66,15 @@ byte parityNew;
 byte addressNew;
 char rulesNew[7];
 
+Stream *consolePort = NULL;
+
 void setup() {
   bootTimeMillis = millis();
-  consolePort.begin(9600);
+  
+  SERIAL_PORT_HARDWARE.begin(9600);
+  if ((int) &SERIAL_PORT_HARDWARE != (int) &SERIAL_PORT_MONITOR) {
+    SERIAL_PORT_MONITOR.begin(9600);
+  }
 
   // retrieve settings from EEPROM
   validConfiguration = getEEPROMConfig();
@@ -81,33 +85,41 @@ void loop() {
     IonoModbusRtuSlave.process();
     
   } else {
-    if (consolePort.available()) {
-      int b = consolePort.read();
-      switch (opMode) {
-        case 0:
-          if (b == ' ') {
-            if (spacesCounter >= 4) {
-              printConsoleMenu();
-              opMode = 1;
-            } else {
-              spacesCounter++;
-            }
-          } else if (validConfiguration) {
-            startModbus();
-          }
-          break;
-        case 1:
-          serialConsole(b);
-          break;
+    if (consolePort == NULL) {
+      if (SERIAL_PORT_HARDWARE.available()) {
+        consolePort = &SERIAL_PORT_HARDWARE;
+      } else if (SERIAL_PORT_MONITOR.available()) {
+        consolePort = &SERIAL_PORT_MONITOR;
       }
-    } else if (validConfiguration && opMode == 0 && bootTimeMillis + BOOT_CONSOLE_TIMEOUT_MILLIS < millis()) {
+    } else if (consolePort->available()) {
+      int b = consolePort->read();
+      if (opMode == 0) {
+        if (b == ' ') {
+          if (spacesCounter >= 4) {
+            printConsoleMenu();
+            opMode = 1;
+          } else {
+            spacesCounter++;
+          }
+        } else if (validConfiguration) {
+          startModbus();
+        } else {
+          consolePort = NULL;
+        }
+      } else { // opMode == 1
+        serialConsole(b);
+      }
+    }
+    
+    if (validConfiguration && opMode == 0 && bootTimeMillis + BOOT_CONSOLE_TIMEOUT_MILLIS < millis()) {
       startModbus();
     }
   }
 }
 
 void startModbus() {
-  consolePort.end();
+  SERIAL_PORT_HARDWARE.end();
+  SERIAL_PORT_MONITOR.end();
 
   switch (parityCurrent) {
     case 2:
@@ -162,8 +174,8 @@ void serialConsole(int b) {
     case 0: // waiting for menu selection number
       switch (b) {
         case '0':
-          consolePort.println((char)b);
-          consolePort.println();
+          consolePort->println((char)b);
+          consolePort->println();
           printlnProgMemString(CONSOLE_CURRENT_CONFIG);
           printConfiguration(speedCurrent, parityCurrent, addressCurrent, rulesCurrent);
           printConsoleMenu();
@@ -171,35 +183,35 @@ void serialConsole(int b) {
         case '1':
           consoleState = 1;
           consoleInputBuffer[0] = 0;
-          consolePort.println((char)b);
-          consolePort.println();
+          consolePort->println((char)b);
+          consolePort->println();
           printProgMemString(CONSOLE_TYPE_SPEED);
           break;
         case '2':
           consoleState = 2;
           consoleInputBuffer[0] = 0;
-          consolePort.println((char)b);
-          consolePort.println();
+          consolePort->println((char)b);
+          consolePort->println();
           printProgMemString(CONSOLE_TYPE_PARITY);
           break;
         case '3':
           consoleState = 3;
           consoleInputBuffer[0] = 0;
-          consolePort.println((char)b);
-          consolePort.println();
+          consolePort->println((char)b);
+          consolePort->println();
           printProgMemString(CONSOLE_TYPE_ADDRESS);
           break;
         case '4':
           consoleState = 4;
           consoleInputBuffer[0] = 0;
-          consolePort.println((char)b);
-          consolePort.println();
+          consolePort->println((char)b);
+          consolePort->println();
           printProgMemString(CONSOLE_TYPE_MIRROR);
           break;
         case '5':
           consoleState = 5;
-          consolePort.println((char)b);
-          consolePort.println();
+          consolePort->println((char)b);
+          consolePort->println();
           printlnProgMemString(CONSOLE_NEW_CONFIG);
           printConfiguration((speedNew == 0) ? speedCurrent : speedNew, (parityNew == 0) ? parityCurrent : parityNew, (addressNew == 0) ? addressCurrent : addressNew, (rulesNew[0] == 0) ? rulesCurrent : rulesNew);
           printProgMemString(CONSOLE_TYPE_SAVE);
@@ -209,28 +221,28 @@ void serialConsole(int b) {
     case 1: // speed
       if (numberEdit(consoleInputBuffer, &speedNew, b, 1, 1, 8)) {
         consoleState = 0;
-        consolePort.println();
+        consolePort->println();
         printConsoleMenu();
       }
       break;
     case 2: // parity
       if (numberEdit(consoleInputBuffer, &parityNew, b, 1, 1, 3)) {
         consoleState = 0;
-        consolePort.println();
+        consolePort->println();
         printConsoleMenu();
       }
       break;
     case 3: // address
       if (numberEdit(consoleInputBuffer, &addressNew, b, 3, 1, 247)) {
         consoleState = 0;
-        consolePort.println();
+        consolePort->println();
         printConsoleMenu();
       }
       break;
     case 4: // rules
       if (rulesEdit(consoleInputBuffer, rulesNew, b, 6)) {
         consoleState = 0;
-        consolePort.println();
+        consolePort->println();
         printConsoleMenu();
       }
       break;
@@ -239,7 +251,7 @@ void serialConsole(int b) {
         case 'Y':
         case 'y':
           consoleState = 0;
-          consolePort.println('Y');
+          consolePort->println('Y');
           if (saveConfig()) {
             printlnProgMemString(CONSOLE_SAVED);
             delay(1000);
@@ -252,8 +264,8 @@ void serialConsole(int b) {
         case 'N':
         case 'n':
           consoleState = 0;
-          consolePort.println('N');
-          consolePort.println();
+          consolePort->println('N');
+          consolePort->println();
           printConsoleMenu();
           break;
       }
@@ -331,22 +343,22 @@ void softReset() {
 
 void printlnProgMemString(const char* s) {
   printProgMemString(s);
-  consolePort.println();
+  consolePort->println();
 }
 
 void printProgMemString(const char* s) {
   int len = strlen_P(s);
   for (int k = 0; k < len; k++) {
-    consolePort.print((char)pgm_read_byte_near(s + k));
+    consolePort->print((char)pgm_read_byte_near(s + k));
   }
 }
 
 void printConsoleMenu() {
-  consolePort.println();
+  consolePort->println();
   printlnProgMemString(CONSOLE_MENU_HEADER);
   for (int i = 0; i <= 5; i++) {
-    consolePort.print(i);
-    consolePort.print(". ");
+    consolePort->print(i);
+    consolePort->print(". ");
     switch (i) {
       case 0:
         printlnProgMemString(CONSOLE_MENU_CURRENT_CONFIG);
@@ -374,39 +386,39 @@ void printConsoleMenu() {
 void printConfiguration(byte speed, byte parity, byte address, char *rules) {
   char s[] = ": ";
   printProgMemString(CONSOLE_MENU_SPEED);
-  consolePort.print(s);
+  consolePort->print(s);
   if (speed == 0) {
-    consolePort.println();
+    consolePort->println();
   } else {
-    consolePort.println(SPEED_VALUE[speed]);
+    consolePort->println(SPEED_VALUE[speed]);
   }
   printProgMemString(CONSOLE_MENU_PARITY);
-  consolePort.print(s);
+  consolePort->print(s);
   switch (parity) {
     case 1:
-      consolePort.print("Even");
+      consolePort->print("Even");
       break;
     case 2:
-      consolePort.print("Odd");
+      consolePort->print("Odd");
       break;
     case 3:
-      consolePort.print("None");
+      consolePort->print("None");
       break;
   }
-  consolePort.println();
+  consolePort->println();
   printProgMemString(CONSOLE_MENU_ADDRESS);
-  consolePort.print(s);
+  consolePort->print(s);
   if (address == 0) {
-    consolePort.println();
+    consolePort->println();
   } else {
-    consolePort.println(address);
+    consolePort->println(address);
   }
   printProgMemString(CONSOLE_MENU_MIRROR);
-  consolePort.print(s);
+  consolePort->print(s);
   if (rules[0] == 0) {
-    consolePort.println();
+    consolePort->println();
   } else {
-    consolePort.println(rules);
+    consolePort->println(rules);
   }
 }
 
@@ -416,9 +428,9 @@ boolean rulesEdit(char *buffer, char *value, int c, int size) {
     case 8: case 127: // backspace
       i = strlen(buffer);
       if (i > 0) {
-        consolePort.print('\b');
-        consolePort.print(' ');
-        consolePort.print('\b');
+        consolePort->print('\b');
+        consolePort->print(' ');
+        consolePort->print('\b');
         buffer[i - 1] = 0;
       }
       break;
@@ -437,7 +449,7 @@ boolean rulesEdit(char *buffer, char *value, int c, int size) {
           c -= 32;
         }
         if (c == 'F' || c == 'I' || c == 'H' || c == 'L' || c == 'T' || c == '-') {
-          consolePort.print((char)c);
+          consolePort->print((char)c);
           strcat_c(buffer, c);
         }
       }
@@ -453,9 +465,9 @@ boolean numberEdit(char *buffer, byte *value, int c, int length, long min, long 
     case 8: case 127: // backspace
       i = strlen(buffer);
       if (i > 0) {
-        consolePort.print('\b');
-        consolePort.print(' ');
-        consolePort.print('\b');
+        consolePort->print('\b');
+        consolePort->print(' ');
+        consolePort->print('\b');
         buffer[i - 1] = 0;
       }
       break;
@@ -472,7 +484,7 @@ boolean numberEdit(char *buffer, byte *value, int c, int length, long min, long 
     default:
       if (strlen(buffer) < length) {
         if (c >= '0' && c <= '9') {
-          consolePort.print((char)c);
+          consolePort->print((char)c);
           strcat_c(buffer, c);
         }
       }
