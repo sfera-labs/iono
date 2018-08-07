@@ -125,7 +125,7 @@ void IonoClass::setBYP(uint8_t pin, bool value) {
   if (pin == DI5) {
     _pinMap[DI5] = value ? 0 : 7;
     pinMode(_pinMap[DI5], INPUT);
-  } else if (pin == DI5) {
+  } else if (pin == DI6) {
     _pinMap[DI6] = value ? 1 : 5;
     pinMode(_pinMap[DI6], INPUT);
   }
