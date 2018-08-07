@@ -25,10 +25,11 @@
 
 #ifdef IONO_ARDUINO
 #define IONO_AV_MAX 10.0
+#define IONO_AI_MAX 20.0
 #else
 #define IONO_AV_MAX 30.0
+#define IONO_AI_MAX 25.0
 #endif
-#define IONO_AI_MAX 20.0
 #define IONO_AO_MAX 10.0
 
 #define ANALOG_READ_MAX ((1 << ANALOG_READ_BITS) - 1)
