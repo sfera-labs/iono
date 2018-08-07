@@ -375,8 +375,8 @@ void IonoClass::write(uint8_t pin, float value) {
   else if (pin == AO1) {
     if (value < 0) {
       value = 0;
-    } else if (value > 10) {
-      value = 10;
+    } else if (value > IONO_AO_MAX) {
+      value = IONO_AO_MAX;
     }
     analogWrite(_pinMap[pin], value * ANALOG_WRITE_MAX / IONO_AO_MAX);
     _ao1_val = value;
