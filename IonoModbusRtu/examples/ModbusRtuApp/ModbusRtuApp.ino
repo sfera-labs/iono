@@ -78,6 +78,10 @@ void setup() {
 
   // retrieve settings from EEPROM
   validConfiguration = getEEPROMConfig();
+
+#ifdef IONO_MKR
+  pinMode(PIN_TXEN, OUTPUT);
+#endif
 }
 
 void loop() {
@@ -96,7 +100,14 @@ void loop() {
       if (opMode == 0) {
         if (b == ' ') {
           if (spacesCounter >= 4) {
+#ifdef IONO_MKR
+            digitalWrite(PIN_TXEN, HIGH);
+#endif
             printConsoleMenu();
+#ifdef IONO_MKR
+            consolePort->flush();
+            digitalWrite(PIN_TXEN, LOW);
+#endif
             opMode = 1;
           } else {
             spacesCounter++;
@@ -169,6 +180,9 @@ void setLink(char rule, uint8_t dix, uint8_t dox) {
 }
 
 void serialConsole(int b) {
+#ifdef IONO_MKR
+  digitalWrite(PIN_TXEN, HIGH);
+#endif
   delayMicroseconds(4000); // this is to let the console also work over the RS485 interface
   switch (consoleState) {
     case 0: // waiting for menu selection number
@@ -273,6 +287,10 @@ void serialConsole(int b) {
     default:
       break;
   }
+#ifdef IONO_MKR
+  consolePort->flush();
+  digitalWrite(PIN_TXEN, LOW);
+#endif
 }
 
 boolean saveConfig() {
@@ -449,6 +467,8 @@ boolean rulesEdit(char *buffer, char *value, int c, int size) {
           c -= 32;
         }
         if (c == 'F' || c == 'I' || c == 'H' || c == 'L' || c == 'T' || c == '-') {
+          consolePort->print(' ');
+          consolePort->print('\b');
           consolePort->print((char)c);
           strcat_c(buffer, c);
         }
@@ -484,6 +504,8 @@ boolean numberEdit(char *buffer, byte *value, int c, int length, long min, long 
     default:
       if (strlen(buffer) < length) {
         if (c >= '0' && c <= '9') {
+          consolePort->print(' ');
+          consolePort->print('\b');
           consolePort->print((char)c);
           strcat_c(buffer, c);
         }
