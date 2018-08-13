@@ -107,6 +107,10 @@ IonoClass::IonoClass() {
   pinMode(_pinMap[DI5], INPUT);
   pinMode(_pinMap[DI6], INPUT);
 
+#ifdef PIN_TXEN
+  pinMode(PIN_TXEN, OUTPUT);
+#endif
+
 #ifdef ARDUINO_ARCH_AVR
   // For Arduino UNO, Ethernet and Leonardo ETH to use the external 3.3V reference
   analogReference(EXTERNAL);
