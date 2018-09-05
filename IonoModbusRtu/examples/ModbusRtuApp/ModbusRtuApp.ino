@@ -70,7 +70,7 @@ Stream *consolePort = NULL;
 
 void setup() {
   bootTimeMillis = millis();
-  
+
   SERIAL_PORT_HARDWARE.begin(9600);
   if ((int) &SERIAL_PORT_HARDWARE != (int) &SERIAL_PORT_MONITOR) {
     SERIAL_PORT_MONITOR.begin(9600);
@@ -78,16 +78,12 @@ void setup() {
 
   // retrieve settings from EEPROM
   validConfiguration = getEEPROMConfig();
-
-#ifdef IONO_MKR
-  pinMode(PIN_TXEN, OUTPUT);
-#endif
 }
 
 void loop() {
   if (opMode == 2) {
     IonoModbusRtuSlave.process();
-    
+
   } else {
     if (consolePort == NULL) {
       if (SERIAL_PORT_HARDWARE.available()) {
@@ -121,7 +117,7 @@ void loop() {
         serialConsole(b);
       }
     }
-    
+
     if (validConfiguration && opMode == 0 && bootTimeMillis + BOOT_CONSOLE_TIMEOUT_MILLIS < millis()) {
       startModbus();
     }
@@ -520,4 +516,3 @@ void strcat_c(char *s, char c) {
   *s++ = c;
   *s++ = 0;
 }
-

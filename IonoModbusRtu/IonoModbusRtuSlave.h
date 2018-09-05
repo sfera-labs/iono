@@ -18,10 +18,13 @@
 
 #include <ModbusRtuSlave.h>
 
+#define MB_RESP_PASS 0xFE
+
 class IonoModbusRtuSlaveClass {
   public:
     static void begin(byte unitAddr, unsigned long baud, unsigned long config, unsigned long diDebounceTime);
     static void process();
+    static void setCustomHandler(Callback *callback);
 
   private:
     static bool _di1deb;
@@ -37,6 +40,8 @@ class IonoModbusRtuSlaveClass {
     static word _di4count;
     static word _di5count;
     static word _di6count;
+
+    static Callback *_customCallback;
 
     static byte onRequest(byte unitAddr, byte function, word regAddr, word qty, byte *data);
     static void onDIChange(uint8_t pin, float value);

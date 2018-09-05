@@ -36,6 +36,8 @@ word IonoModbusRtuSlaveClass::_di4count = 0;
 word IonoModbusRtuSlaveClass::_di5count = 0;
 word IonoModbusRtuSlaveClass::_di6count = 0;
 
+Callback *IonoModbusRtuSlaveClass::_customCallback = NULL;
+
 void IonoModbusRtuSlaveClass::begin(byte unitAddr, unsigned long baud, unsigned long config, unsigned long diDebounceTime) {
   SERIAL_PORT_HARDWARE.begin(baud, config);
   ModbusRtuSlave.setCallback(&IonoModbusRtuSlaveClass::onRequest);
@@ -57,6 +59,10 @@ void IonoModbusRtuSlaveClass::begin(byte unitAddr, unsigned long baud, unsigned 
 void IonoModbusRtuSlaveClass::process() {
   ModbusRtuSlave.process();
   Iono.process();
+}
+
+void IonoModbusRtuSlaveClass::setCustomHandler(Callback *callback) {
+  _customCallback = callback;
 }
 
 void IonoModbusRtuSlaveClass::onDIChange(uint8_t pin, float value) {
@@ -106,6 +112,14 @@ void IonoModbusRtuSlaveClass::onDIChange(uint8_t pin, float value) {
 }
 
 byte IonoModbusRtuSlaveClass::onRequest(byte unitAddr, byte function, word regAddr, word qty, byte *data) {
+  byte respCode;
+  if (_customCallback != NULL) {
+    respCode = _customCallback(unitAddr, function, regAddr, qty, data);
+    if (respCode != MB_RESP_PASS) {
+      return respCode;
+    }
+  }
+
   switch (function) {
     case MB_FC_READ_COILS:
       if (checkAddrRange(regAddr, qty, 1, DO_MAX_INDEX)) {
