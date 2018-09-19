@@ -17,9 +17,11 @@
 #include <Iono.h>
 
 #ifdef IONO_MKR
+#define ID_NUMBER 0x20
 #define DO_MAX_INDEX 4
 #else
 #define DO_MAX_INDEX 6
+#define ID_NUMBER 0x10
 #endif
 
 bool IonoModbusRtuSlaveClass::_di1deb;
@@ -169,6 +171,10 @@ byte IonoModbusRtuSlaveClass::onRequest(byte unitAddr, byte function, word regAd
         for (int i = regAddr - 1000; i < regAddr - 1000 + qty; i++) {
           ModbusRtuSlave.responseAddRegister(indexToDIcount(i));
         }
+        return MB_RESP_OK;
+      }
+      if (regAddr == 99 && qty == 1) {
+        ModbusRtuSlave.responseAddRegister(ID_NUMBER);
         return MB_RESP_OK;
       }
       return MB_EX_ILLEGAL_DATA_ADDRESS;
