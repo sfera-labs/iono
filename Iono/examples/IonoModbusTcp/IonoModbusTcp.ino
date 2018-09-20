@@ -1,10 +1,10 @@
 /*
-  IonoModbusTcp.cpp - A Modbus TCP server for Iono Ethernet
+  IonoModbusTcp.cpp - A Modbus TCP server for Iono Ethernet/MKR
 
-    Copyright (C) 2016-2017 Sfera Labs S.r.l. - All rights reserved.
+    Copyright (C) 2016-2018 Sfera Labs S.r.l. - All rights reserved.
 
     For information, see:
-    http://www.sferalabs.cc/iono-arduino
+    http://www.sferalabs.cc/iono
 
   This code is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -13,41 +13,77 @@
   See file LICENSE.txt for further informations on licensing terms.
 */
 
-#include <EEPROM.h>
-#ifdef ARDUINO_AVR_LEONARDO_ETH
-  #include <Ethernet2.h>
+#ifdef ARDUINO_ARCH_SAMD
+#include <FlashAsEEPROM.h>
+#include <FlashStorage.h>
 #else
-  #include <Ethernet.h>
+#include <EEPROM.h>
 #endif
-#include <SPI.h>
-#include <avr/pgmspace.h>
+
 #include <Iono.h>
 
-#define DELAY  50            // the debounce delay in milliseconds
+#ifdef IONO_MKR
+  #include <WiFiNINA.h>
+#else
+  #ifdef ARDUINO_AVR_LEONARDO_ETH
+    #include <Ethernet2.h>
+  #else
+    #include <Ethernet.h>
+  #endif
+#endif
 
-const PROGMEM char CONSOLE_MENU_HEADER[]  = {"Sfera Labs - Iono Arduino - Modbus TCP server configuration menu"};
+#include <SPI.h>
+#include <avr/pgmspace.h>
+
+
+#define DELAY  50            // the debounce delay in milliseconds
+#define MAX_SSID_PASS_LEN 30
+
+const PROGMEM char CONSOLE_MENU_HEADER[]  = {"=== Sfera Labs - Modbus TCP server configuration menu - v2.0 ==="};
 const PROGMEM char CONSOLE_MENU_CURRENT_CONFIG[]  = {"Print current configuration"};
-const PROGMEM char CONSOLE_MENU_MAC[]  = {"MAC address"};
+const PROGMEM char CONSOLE_MENU_MAC[]  = {"MAC address (Eth only)"};
 const PROGMEM char CONSOLE_MENU_IP[]  = {"IP address"};
+const PROGMEM char CONSOLE_MENU_IP_ASSIGNED[]  = {"IP address assigned"};
 const PROGMEM char CONSOLE_MENU_MASK[]  = {"Network mask"};
 const PROGMEM char CONSOLE_MENU_DNS[]  = {"DNS address"};
 const PROGMEM char CONSOLE_MENU_GATEWAY[]  = {"Default gateway"};
+const PROGMEM char CONSOLE_MENU_SSID[]  = {"WiFi SSID"};
+const PROGMEM char CONSOLE_MENU_PASS[]  = {"WiFi Password"};
 const PROGMEM char CONSOLE_MENU_SAVE[]  = {"Save configuration and restart"};
-const PROGMEM char CONSOLE_MENU_TYPE[]  = {"Type a menu number [0, 1, 2, 3, 4, 5, 6]: "};
+const PROGMEM char CONSOLE_MENU_TYPE[]  = {"Type a menu number [0-8]: "};
 const PROGMEM char CONSOLE_TYPE_MAC[]  = {"Type MAC address and press ENTER (NN-NN-NN-NN-NN-NN): "};
 const PROGMEM char CONSOLE_TYPE_IP[]  = {"Type IP address (NNN.NNN.NNN.NNN): "};
 const PROGMEM char CONSOLE_TYPE_MASK[]  = {"Type Network mask (NNN.NNN.NNN.NNN): "};
 const PROGMEM char CONSOLE_TYPE_DNS[]  = {"Type DNS address (NNN.NNN.NNN.NNN): "};
 const PROGMEM char CONSOLE_TYPE_GATEWAY[]  = {"Type Default gateway address (NNN.NNN.NNN.NNN): "};
+const PROGMEM char CONSOLE_TYPE_SSID[]  = {"Type WiFi SSID: "};
+const PROGMEM char CONSOLE_TYPE_PASS[]  = {"Type WiFi Password: "};
 const PROGMEM char CONSOLE_TYPE_SAVE[]  = {"Confirm? (Y/N): "};
 const PROGMEM char CONSOLE_CURRENT_CONFIG[]  = {"Current network configuration:"};
 const PROGMEM char CONSOLE_NEW_CONFIG[]  = {"New network configuration:"};
 const PROGMEM char CONSOLE_ERROR[]  = {"Error"};
 const PROGMEM char CONSOLE_SAVED[]  = {"Saved"};
 
-EthernetServer server = EthernetServer(502); // Modbus TCP server listening on port 502
+#ifdef IONO_MKR
+# define EthernetServer WiFiServer
+# define EthernetClient WiFiClient
 
-int consoleState = 0; // 0: wait for menu selection number; 1: MAC; 2: IP; 3: subnet; 4: DNS; 5: gateway; 6 confirm to save
+unsigned long wifiBeginTs;
+char ssidCurrent[MAX_SSID_PASS_LEN + 1];
+char passCurrent[MAX_SSID_PASS_LEN + 1];
+char ssidNew[MAX_SSID_PASS_LEN + 1];
+char passNew[MAX_SSID_PASS_LEN + 1];
+int ledState;
+#else
+char *ssidCurrent = NULL;
+char *passCurrent = NULL;
+char *ssidNew = NULL;
+char *passNew = NULL;
+#endif
+
+EthernetServer server(502); // Modbus TCP server listening on port 502
+
+int consoleState = -1;
 boolean serverEnabled;
 int analogOutValue = 0; // 0-10000 mV
 
@@ -74,10 +110,11 @@ byte mbap[7];
 byte pdu[16];
 byte rpdu[16];
 
+bool serialStarted = false;
+
 void setup() {
   // serial console menu
   Serial.begin(9600);
-  printConsoleMenu();
 
   // retrieve network settings from EEPROM and initialize server
   if (getNetConfigAndSet()) {
@@ -93,6 +130,11 @@ void setup() {
     lastvalues[i] = -1;
     times[i] = 0;
   }
+
+#ifdef IONO_MKR
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, HIGH);
+#endif
 }
 
 void loop() {
@@ -104,6 +146,18 @@ void loop() {
 
   // Modbus TCP server
   if (serverEnabled) {
+#ifdef IONO_MKR
+    ledState = HIGH;
+    if (consoleState == -1) {
+      if (WiFi.status() == WL_CONNECTED) {
+        ledState = LOW;
+      } else if (millis() - wifiBeginTs >= 10000) {
+        WiFi.begin(ssidCurrent, passCurrent);
+        wifiBeginTs = millis();
+      }
+    }
+    digitalWrite(LED_BUILTIN, ledState);
+#endif
     EthernetClient client = server.available();
     if (client) {
       while (client.available()) {
@@ -353,6 +407,16 @@ void processPdu(EthernetClient client, byte *mbap, byte *pdu) {
 }
 
 void serialConsole() {
+  if (!Serial) {
+    return;
+  }
+
+  if (!serialStarted) {
+    serialStarted = true;
+    consoleState = 0;
+    printConsoleMenu();
+  }
+
   if (Serial.available() > 0) {
     int c = Serial.read();
     switch (consoleState) {
@@ -362,7 +426,7 @@ void serialConsole() {
             Serial.println((char)c);
             Serial.println();
             printlnProgMemString(CONSOLE_CURRENT_CONFIG);
-            printConfiguration(macCurrent, ipCurrent, netmaskCurrent, dnsCurrent, gatewayCurrent);
+            printConfiguration(macCurrent, ipCurrent, netmaskCurrent, dnsCurrent, gatewayCurrent, ssidCurrent, passCurrent, true);
             printConsoleMenu();
             break;
           case '1':
@@ -402,70 +466,112 @@ void serialConsole() {
             break;
           case '6':
             consoleState = 6;
+            ssidNew[0] = 0;
+            Serial.println((char)c);
+            Serial.println();
+            printProgMemString(CONSOLE_TYPE_SSID);
+            break;
+          case '7':
+            consoleState = 7;
+            passNew[0] = 0;
+            Serial.println((char)c);
+            Serial.println();
+            printProgMemString(CONSOLE_TYPE_PASS);
+            break;
+          case '8':
+            consoleState = 8;
             Serial.println((char)c);
             Serial.println();
             printlnProgMemString(CONSOLE_NEW_CONFIG);
-            printConfiguration((macNew[0] == 0) ? macCurrent : macNew, (ipNew[0] == 0) ? ipCurrent : ipNew, (netmaskNew[0] == 0) ? netmaskCurrent : netmaskNew, (dnsNew[0] == 0) ? dnsCurrent : dnsNew, (gatewayNew[0] == 0) ? gatewayCurrent : gatewayNew);
+            printConfiguration(
+              (macNew[0] == 0) ? macCurrent : macNew,
+              (ipNew[0] == 0) ? ipCurrent : ipNew,
+              (netmaskNew[0] == 0) ? netmaskCurrent : netmaskNew,
+              (dnsNew[0] == 0) ? dnsCurrent : dnsNew,
+              (gatewayNew[0] == 0) ? gatewayCurrent : gatewayNew,
+              (ssidNew[0] == 0) ? ssidCurrent : ssidNew,
+              (passNew[0] == 0) ? passCurrent : passNew,
+              false
+            );
             printProgMemString(CONSOLE_TYPE_SAVE);
             break;
         }
         break;
       case 1: // MAC address
-        if (stringEdit(macNew, c, 17, true, '-')) {
+        if (stringEdit(macNew, c, 17, true, true, '-')) {
           byte maca[6];
           Serial.println();
           if (!parseMacAddress(macNew, maca)) {
             printlnProgMemString(CONSOLE_ERROR);
+            macNew[0] = 0;
           }
           consoleState = 0;
           printConsoleMenu();
         }
         break;
       case 2: // IP address
-        if (stringEdit(ipNew, c, 15, false, '.')) {
+        if (stringEdit(ipNew, c, 15, true, false, '.')) {
           byte ipa[6];
           Serial.println();
           if (!parseIpAddress(ipNew, ipa)) {
             printlnProgMemString(CONSOLE_ERROR);
+            ipNew[0] = 0;
           }
           consoleState = 0;
           printConsoleMenu();
         }
         break;
       case 3: // subnet mask
-        if (stringEdit(netmaskNew, c, 15, false, '.')) {
+        if (stringEdit(netmaskNew, c, 15, true, false, '.')) {
           byte netmaska[6];
           Serial.println();
           if (!parseIpAddress(netmaskNew, netmaska)) {
             printlnProgMemString(CONSOLE_ERROR);
+            netmaskNew[0] = 0;
           }
           consoleState = 0;
           printConsoleMenu();
         }
         break;
       case 4: // DNS
-        if (stringEdit(dnsNew, c, 15, false, '.')) {
+        if (stringEdit(dnsNew, c, 15, true, false, '.')) {
           byte dnsa[6];
           Serial.println();
           if (!parseIpAddress(dnsNew, dnsa)) {
             printlnProgMemString(CONSOLE_ERROR);
+            dnsNew[0] = 0;
           }
           consoleState = 0;
           printConsoleMenu();
         }
         break;
       case 5: // gateway
-        if (stringEdit(gatewayNew, c, 15, false, '.')) {
+        if (stringEdit(gatewayNew, c, 15, true, false, '.')) {
           byte ipa[6];
           Serial.println();
           if (!parseIpAddress(gatewayNew, ipa)) {
             printlnProgMemString(CONSOLE_ERROR);
+            gatewayNew[0] = 0;
           }
           consoleState = 0;
           printConsoleMenu();
         }
         break;
-      case 6: // confirm to save
+      case 6: // ssid
+        if (stringEdit(ssidNew, c, MAX_SSID_PASS_LEN, false, false, 0)) {
+          Serial.println();
+          consoleState = 0;
+          printConsoleMenu();
+        }
+        break;
+      case 7: // pass
+        if (stringEdit(passNew, c, MAX_SSID_PASS_LEN, false, false, 0)) {
+          Serial.println();
+          consoleState = 0;
+          printConsoleMenu();
+        }
+        break;
+      case 8: // confirm to save
         switch (c) {
           case 'Y':
           case 'y':
@@ -515,16 +621,18 @@ void debounce() {
 }
 
 boolean saveNetConfigAndRestart() {
+  /*
   byte maca[6];
   byte ipa[4];
   byte netmaska[4];
   byte dnsa[4];
   byte gatewaya[4];
+  */
   if (macNew[0] == 0) {
     strcpy(macNew, macCurrent);
   }
   if (ipNew[0] == 0) {
-    strcpy(macNew, ipCurrent);
+    strcpy(ipNew, ipCurrent);
   }
   if (netmaskNew[0] == 0) {
     strcpy(netmaskNew, netmaskCurrent);
@@ -535,7 +643,15 @@ boolean saveNetConfigAndRestart() {
   if (gatewayNew[0] == 0) {
     strcpy(gatewayNew, gatewayCurrent);
   }
-  if (writeEepromConfig(macNew, ipNew, netmaskNew, dnsNew, gatewayNew)) {
+#ifdef IONO_MKR
+  if (ssidNew[0] == 0) {
+    strcpy(ssidNew, ssidCurrent);
+  }
+  if (passNew[0] == 0) {
+    strcpy(passNew, passCurrent);
+  }
+#endif
+  if (writeEepromConfig(macNew, ipNew, netmaskNew, dnsNew, gatewayNew, ssidNew, passNew)) {
     softReset();
     return true;
   } else {
@@ -549,7 +665,8 @@ boolean getNetConfigAndSet() {
   byte netmaska[4];
   byte dnsa[4];
   byte gatewaya[4];
-  if (readEepromConfig(maca, ipa, netmaska, dnsa, gatewaya)) {
+
+  if (readEepromConfig(maca, ipa, netmaska, dnsa, gatewaya, ssidCurrent, passCurrent)) {
     printMacAddress(macCurrent, maca);
     printIpAddress(ipCurrent, ipa);
     printIpAddress(netmaskCurrent, netmaska);
@@ -559,20 +676,26 @@ boolean getNetConfigAndSet() {
     IPAddress dns(dnsa[0], dnsa[1], dnsa[2], dnsa[3]);
     IPAddress subnet(netmaska[0], netmaska[1], netmaska[2], netmaska[3]);
     IPAddress gateway(gatewaya[0], gatewaya[1], gatewaya[2], gatewaya[3]);
+#ifdef IONO_MKR
+    WiFi.config(ip, dns, gateway, subnet);
+    WiFi.begin(ssidCurrent, passCurrent);
+    wifiBeginTs = millis();
+#else
     Ethernet.begin(maca, ip, dns, gateway, subnet);
+#endif
     return true;
   } else {
     return false;
   }
 }
 
-boolean writeEepromConfig(char *mac, char *ip, char *netmask, char *dns, char *gateway) {
+boolean writeEepromConfig(char *mac, char *ip, char *netmask, char *dns, char *gateway, char *ssid, char *pass) {
   byte maca[6];
   byte ipa[4];
   byte netmaska[4];
   byte dnsa[4];
   byte gatewaya[4];
-  if (mac[0] != 0 && ip[0] != 0 && netmask[0] != 0 && dns[0] != 0 && gateway[0] != 0) {
+  if ((mac[0] != 0 || (ssid[0] != 0 && pass[0] != 0)) && ip[0] != 0 && netmask[0] != 0 && dns[0] != 0 && gateway[0] != 0) {
     if (parseMacAddress(mac, maca) && parseIpAddress(ip, ipa) && parseIpAddress(netmask, netmaska) && parseIpAddress(dns, dnsa) && parseIpAddress(gateway, gatewaya)) {
       byte checksum = 7;
       int a = 0;
@@ -592,18 +715,50 @@ boolean writeEepromConfig(char *mac, char *ip, char *netmask, char *dns, char *g
         EEPROM.write(a, netmaska[a - 12]);
         checksum ^= netmaska[a - 12];
       }
+#ifndef IONO_MKR
       for (; a < 22; a++) {
         EEPROM.write(a, maca[a - 16]);
         checksum ^= maca[a - 16];
       }
+#else
+      for (; a < 16 + MAX_SSID_PASS_LEN + 1; a++) {
+        EEPROM.write(a, ssid[a - 16]);
+        checksum ^= ssid[a - 16];
+        if (ssid[a - 16] == 0) {
+          a++;
+          break;
+        }
+      }
+      int ssidLen = a - 16;
+
+      for (; a < 16 + ssidLen + MAX_SSID_PASS_LEN + 1; a++) {
+        EEPROM.write(a, pass[a - 16 - ssidLen]);
+        checksum ^= pass[a - 16 - ssidLen];
+        if (pass[a - 16 - ssidLen] == 0) {
+          a++;
+          break;
+        }
+      }
+#endif
       EEPROM.write(a, checksum);
+
+#ifdef ARDUINO_ARCH_SAMD
+      EEPROM.commit();
+#endif
+
       return true;
     }
   }
   return false;
 }
 
-boolean readEepromConfig(byte *maca, byte *ipa, byte *netmaska, byte *dnsa, byte *gatewaya) {
+boolean readEepromConfig(byte *maca, byte *ipa, byte *netmaska, byte *dnsa, byte *gatewaya, char *ssid, char *pass) {
+#ifdef ARDUINO_ARCH_SAMD
+  if (!EEPROM.isValid()) {
+    return false;
+  }
+#endif
+
   byte checksum = 7;
   int a = 0;
   for (; a < 4; a++) {
@@ -622,15 +777,46 @@ boolean readEepromConfig(byte *maca, byte *ipa, byte *netmaska, byte *dnsa, byte
     netmaska[a - 12] = EEPROM.read(a);
     checksum ^= netmaska[a - 12];
   }
+#ifndef IONO_MKR
   for (; a < 22; a++) {
     maca[a - 16] = EEPROM.read(a);
     checksum ^= maca[a - 16];
   }
+#else
+  WiFi.macAddress(maca);
+
+  for (; a < 16 + MAX_SSID_PASS_LEN + 1; a++) {
+    ssid[a - 16] = EEPROM.read(a);
+    checksum ^= ssid[a - 16];
+    if (ssid[a - 16] == 0) {
+      a++;
+      break;
+    }
+  }
+  int ssidLen = a - 16;
+  ssid[ssidLen - 1] = 0;
+
+  for (; a < 16 + ssidLen + MAX_SSID_PASS_LEN + 1; a++) {
+    pass[a - 16 - ssidLen] = EEPROM.read(a);
+    checksum ^= pass[a - 16 - ssidLen];
+    if (pass[a - 16 - ssidLen] == 0) {
+      a++;
+      break;
+    }
+  }
+  int passLen = a - 16 - ssidLen;
+  pass[passLen - 1] = 0;
+#endif
+
   return (EEPROM.read(a) == checksum);
 }
 
 void softReset() {
+#ifdef ARDUINO_ARCH_SAMD
+  NVIC_SystemReset();
+#else
   asm volatile ("  jmp 0");
+#endif
 }
 
 void printlnProgMemString(const char* s) {
@@ -648,7 +834,7 @@ void printProgMemString(const char* s) {
 void printConsoleMenu() {
   Serial.println();
   printlnProgMemString(CONSOLE_MENU_HEADER);
-  for (int i = 0; i <= 6; i++) {
+  for (int i = 0; i <= 8; i++) {
     Serial.print(i);
     Serial.print(". ");
     switch (i) {
@@ -671,6 +857,12 @@ void printConsoleMenu() {
         printlnProgMemString(CONSOLE_MENU_GATEWAY);
         break;
       case 6:
+        printlnProgMemString(CONSOLE_MENU_SSID);
+        break;
+      case 7:
+        printlnProgMemString(CONSOLE_MENU_PASS);
+        break;
+      case 8:
         printlnProgMemString(CONSOLE_MENU_SAVE);
         break;
     }
@@ -678,7 +870,7 @@ void printConsoleMenu() {
   printProgMemString(CONSOLE_MENU_TYPE);
 }
 
-void printConfiguration(char *mac, char *ip, char *netmask, char *dns, char *gateway) {
+void printConfiguration(char *mac, char *ip, char *netmask, char *dns, char *gateway, char *ssid, char *pass, bool printAssignedIp) {
   char s[] = ": ";
   printProgMemString(CONSOLE_MENU_MAC);
   Serial.print(s);
@@ -686,6 +878,15 @@ void printConfiguration(char *mac, char *ip, char *netmask, char *dns, char *gat
   printProgMemString(CONSOLE_MENU_IP);
   Serial.print(s);
   Serial.println(ip);
+  if (printAssignedIp) {
+    printProgMemString(CONSOLE_MENU_IP_ASSIGNED);
+    Serial.print(s);
+#ifdef IONO_MKR
+    Serial.println(WiFi.localIP());
+#else
+    Serial.println(Ethernet.localIP());
+#endif
+  }
   printProgMemString(CONSOLE_MENU_MASK);
   Serial.print(s);
   Serial.println(netmask);
@@ -695,9 +896,17 @@ void printConfiguration(char *mac, char *ip, char *netmask, char *dns, char *gat
   printProgMemString(CONSOLE_MENU_GATEWAY);
   Serial.print(s);
   Serial.println(gateway);
+#ifdef IONO_MKR
+  printProgMemString(CONSOLE_MENU_SSID);
+  Serial.print(s);
+  Serial.println(ssid);
+  printProgMemString(CONSOLE_MENU_PASS);
+  Serial.print(s);
+  Serial.println(pass);
+#endif
 }
 
-boolean stringEdit(char *s, int c, int size, boolean hex, char sep) {
+boolean stringEdit(char *s, int c, int size, bool filter, bool hex, char sep) {
   int i;
   switch (c) {
     case 8: case 127: // backspace
@@ -717,10 +926,10 @@ boolean stringEdit(char *s, int c, int size, boolean hex, char sep) {
       break;
     default:
       if (strlen(s) < size) {
-        if (hex && c >= 'a' && c <= 'f') {
+        if (filter && hex && c >= 'a' && c <= 'f') {
           c -= 32;
         }
-        if (c >= '0' && c <= '9' || (hex && (c >= 'A' && c <= 'F'))) {
+        if (!filter || c >= '0' && c <= '9' || (hex && (c >= 'A' && c <= 'F'))) {
           Serial.print((char)c);
           strcat_c(s, c);
         } else {
