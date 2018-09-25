@@ -783,7 +783,11 @@ boolean readEepromConfig(byte *maca, byte *ipa, byte *netmaska, byte *dnsa, byte
     checksum ^= maca[a - 16];
   }
 #else
-  WiFi.macAddress(maca);
+  byte acam[6];
+  WiFi.macAddress(acam);
+  for (int i = 0; i < 6; i++) {
+    maca[i] = acam[5 - i];
+  }
 
   for (; a < 16 + MAX_SSID_PASS_LEN + 1; a++) {
     ssid[a - 16] = EEPROM.read(a);
