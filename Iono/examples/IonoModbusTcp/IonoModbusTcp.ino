@@ -68,7 +68,6 @@ const PROGMEM char CONSOLE_SAVED[]  = {"Saved"};
 # define EthernetServer WiFiServer
 # define EthernetClient WiFiClient
 
-unsigned long wifiBeginTs;
 char ssidCurrent[MAX_SSID_PASS_LEN + 1];
 char passCurrent[MAX_SSID_PASS_LEN + 1];
 char ssidNew[MAX_SSID_PASS_LEN + 1];
@@ -151,9 +150,9 @@ void loop() {
     if (consoleState == -1) {
       if (WiFi.status() == WL_CONNECTED) {
         ledState = LOW;
-      } else if (millis() - wifiBeginTs >= 10000) {
+      } else {
+        WiFi.end();
         WiFi.begin(ssidCurrent, passCurrent);
-        wifiBeginTs = millis();
       }
     }
     digitalWrite(LED_BUILTIN, ledState);
@@ -679,7 +678,6 @@ boolean getNetConfigAndSet() {
 #ifdef IONO_MKR
     WiFi.config(ip, dns, gateway, subnet);
     WiFi.begin(ssidCurrent, passCurrent);
-    wifiBeginTs = millis();
 #else
     Ethernet.begin(maca, ip, dns, gateway, subnet);
 #endif
