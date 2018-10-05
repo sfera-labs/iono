@@ -73,6 +73,8 @@ char passCurrent[MAX_SSID_PASS_LEN + 1];
 char ssidNew[MAX_SSID_PASS_LEN + 1];
 char passNew[MAX_SSID_PASS_LEN + 1];
 int ledState;
+boolean clientAfterReset = false;
+unsigned long lastClientTs;
 #else
 char *ssidCurrent = NULL;
 char *passCurrent = NULL;
@@ -150,14 +152,21 @@ void loop() {
     if (consoleState == -1) {
       if (WiFi.status() == WL_CONNECTED) {
         ledState = LOW;
+        if (clientAfterReset && millis() - lastClientTs >= 10000) {
+          WiFi.end();
+        }
       } else {
         WiFi.end();
         WiFi.begin(ssidCurrent, passCurrent);
+        server.begin();
+        clientAfterReset = false;
       }
     }
     digitalWrite(LED_BUILTIN, ledState);
 #endif
+
     EthernetClient client = server.available();
+
     if (client) {
       while (client.available()) {
         byte b = client.read();
@@ -168,6 +177,10 @@ void loop() {
           }
         }
       }
+#ifdef IONO_MKR
+      lastClientTs = millis();
+      clientAfterReset = true;
+#endif
     }
   }
 }
