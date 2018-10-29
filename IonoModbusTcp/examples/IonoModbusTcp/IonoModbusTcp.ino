@@ -39,7 +39,7 @@
 #define DELAY  50            // the debounce delay in milliseconds
 #define MAX_SSID_PASS_LEN 30
 
-const PROGMEM char CONSOLE_MENU_HEADER[]  = {"=== Sfera Labs - Modbus TCP server configuration menu - v2.0 ==="};
+const PROGMEM char CONSOLE_MENU_HEADER[]  = {"=== Sfera Labs - Modbus TCP server configuration menu - v2.1 ==="};
 const PROGMEM char CONSOLE_MENU_CURRENT_CONFIG[]  = {"Print current configuration"};
 const PROGMEM char CONSOLE_MENU_MAC[]  = {"MAC address (Eth only)"};
 const PROGMEM char CONSOLE_MENU_IP[]  = {"IP address"};
@@ -330,6 +330,19 @@ void processPdu(EthernetClient client, byte *mbap, byte *pdu) {
           rpdu[i * 2] = (byte)(v >> 8);
           rpdu[1 + i * 2] = (byte)(v & 0xff);
         }
+      } else if (start == 64990 && quantity == 4) {
+        // read identifier code
+        mbap[5] = 8 + 3;
+        rpdu[0] = 4;
+        rpdu[1] = 8;
+        rpdu[2] = 0xCA; // fixed
+        rpdu[3] = 0xFE; // fixed
+        rpdu[4] = 0xBE; // fixed
+        rpdu[5] = 0xAF; // fixed
+        rpdu[6] = 0x10; // Iono Arduino (0x10)
+        rpdu[7] = 0x02; // App ID: Modbus TCP
+        rpdu[8] = 0x02; // Version High
+        rpdu[9] = 0x01; // Version Low
       } else {
         mbap[5] = 3;
         rpdu[0] = 0x84;
