@@ -17,11 +17,9 @@
 #include <Iono.h>
 
 #ifdef IONO_MKR
-#define ID_NUMBER 0x20
 #define DO_MAX_INDEX 4
 #else
 #define DO_MAX_INDEX 6
-#define ID_NUMBER 0x10
 #endif
 
 bool IonoModbusRtuSlaveClass::_di1deb;
@@ -38,6 +36,8 @@ word IonoModbusRtuSlaveClass::_di4count = 0;
 word IonoModbusRtuSlaveClass::_di5count = 0;
 word IonoModbusRtuSlaveClass::_di6count = 0;
 
+char IonoModbusRtuSlaveClass::_inMode[4] = {0, 0, 0, 0};
+
 Callback *IonoModbusRtuSlaveClass::_customCallback = NULL;
 
 void IonoModbusRtuSlaveClass::begin(byte unitAddr, unsigned long baud, unsigned long config, unsigned long diDebounceTime) {
@@ -50,12 +50,27 @@ void IonoModbusRtuSlaveClass::begin(byte unitAddr, unsigned long baud, unsigned 
   ModbusRtuSlave.begin(unitAddr, &SERIAL_PORT_HARDWARE, baud, 0);
 #endif
 
-  Iono.subscribeDigital(DI1, diDebounceTime, &onDIChange);
-  Iono.subscribeDigital(DI2, diDebounceTime, &onDIChange);
-  Iono.subscribeDigital(DI3, diDebounceTime, &onDIChange);
-  Iono.subscribeDigital(DI4, diDebounceTime, &onDIChange);
+  if (_inMode[0] == 0 || _inMode[0] == 'D') {
+    Iono.subscribeDigital(DI1, diDebounceTime, &onDIChange);
+  }
+  if (_inMode[1] == 0 || _inMode[1] == 'D') {
+    Iono.subscribeDigital(DI2, diDebounceTime, &onDIChange);
+  }
+  if (_inMode[2] == 0 || _inMode[2] == 'D') {
+    Iono.subscribeDigital(DI3, diDebounceTime, &onDIChange);
+  }
+  if (_inMode[3] == 0 || _inMode[3] == 'D') {
+    Iono.subscribeDigital(DI4, diDebounceTime, &onDIChange);
+  }
   Iono.subscribeDigital(DI5, diDebounceTime, &onDIChange);
   Iono.subscribeDigital(DI6, diDebounceTime, &onDIChange);
+}
+
+void IonoModbusRtuSlaveClass::setInputMode(int idx, char mode) {
+  if (idx >= 1 && idx <= 4 &&
+      (mode == 0 || mode == 'D' || mode == 'V' || mode == 'I')) {
+    _inMode[idx - 1] = mode;
+  }
 }
 
 void IonoModbusRtuSlaveClass::process() {
@@ -141,7 +156,11 @@ byte IonoModbusRtuSlaveClass::onRequest(byte unitAddr, byte function, word regAd
       }
       if (checkAddrRange(regAddr, qty, 111, 116)) {
         for (int i = regAddr - 110; i < regAddr - 110 + qty; i++) {
-          ModbusRtuSlave.responseAddBit(Iono.read(indexToDI(i)) == HIGH);
+          if (i > 4 || _inMode[i - 1] == 0 || _inMode[i - 1] == 'D') {
+            ModbusRtuSlave.responseAddBit(Iono.read(indexToDI(i)) == HIGH);
+          } else {
+            ModbusRtuSlave.responseAddBit(false);
+          }
         }
         return MB_RESP_OK;
       }
@@ -157,13 +176,21 @@ byte IonoModbusRtuSlaveClass::onRequest(byte unitAddr, byte function, word regAd
     case MB_FC_READ_INPUT_REGISTER:
       if (checkAddrRange(regAddr, qty, 201, 204)) {
         for (int i = regAddr - 200; i < regAddr - 200 + qty; i++) {
-          ModbusRtuSlave.responseAddRegister(Iono.read(indexToAV(i)) * 1000);
+          if (_inMode[i - 1] != 'D') {
+            ModbusRtuSlave.responseAddRegister(Iono.read(indexToAV(i)) * 1000);
+          } else {
+            ModbusRtuSlave.responseAddRegister(0);
+          }
         }
         return MB_RESP_OK;
       }
       if (checkAddrRange(regAddr, qty, 301, 304)) {
         for (int i = regAddr - 300; i < regAddr - 300 + qty; i++) {
-          ModbusRtuSlave.responseAddRegister(Iono.read(indexToAI(i)) * 1000);
+          if (_inMode[i - 1] != 'D') {
+            ModbusRtuSlave.responseAddRegister(Iono.read(indexToAI(i)) * 1000);
+          } else {
+            ModbusRtuSlave.responseAddRegister(0);
+          }
         }
         return MB_RESP_OK;
       }
@@ -174,7 +201,22 @@ byte IonoModbusRtuSlaveClass::onRequest(byte unitAddr, byte function, word regAd
         return MB_RESP_OK;
       }
       if (regAddr == 99 && qty == 1) {
-        ModbusRtuSlave.responseAddRegister(ID_NUMBER);
+#ifdef IONO_MKR
+        ModbusRtuSlave.responseAddRegister(0x20);
+#else
+        ModbusRtuSlave.responseAddRegister(0x10);
+#endif
+        return MB_RESP_OK;
+      }
+      if (regAddr == 64990 && qty == 4) {
+        ModbusRtuSlave.responseAddRegister(0xCAFE); // fixed
+        ModbusRtuSlave.responseAddRegister(0xBEAF); // fixed
+#ifdef IONO_MKR
+        ModbusRtuSlave.responseAddRegister(0x2001); // Iono MKR - App ID: Modbus RTU
+#else
+        ModbusRtuSlave.responseAddRegister(0x1001); // Iono Arduino - App ID: Modbus RTU
+#endif
+        ModbusRtuSlave.responseAddRegister(0x0301); // Version High - Version Low
         return MB_RESP_OK;
       }
       return MB_EX_ILLEGAL_DATA_ADDRESS;

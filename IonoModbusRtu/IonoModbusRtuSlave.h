@@ -25,6 +25,7 @@ class IonoModbusRtuSlaveClass {
     static void begin(byte unitAddr, unsigned long baud, unsigned long config, unsigned long diDebounceTime);
     static void process();
     static void setCustomHandler(Callback *callback);
+    static void setInputMode(int idx, char mode);
 
   private:
     static bool _di1deb;
@@ -40,6 +41,8 @@ class IonoModbusRtuSlaveClass {
     static word _di4count;
     static word _di5count;
     static word _di6count;
+
+    static char _inMode[4];
 
     static Callback *_customCallback;
 
