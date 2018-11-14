@@ -121,7 +121,7 @@ IonoClass::IonoClass() {
   analogWriteResolution(ANALOG_WRITE_BITS);
 #endif
 
-  _ao1_val = 0;
+  write(AO1, 0);
 }
 
 #ifdef IONO_MKR
