@@ -369,6 +369,31 @@ float IonoClass::read(uint8_t pin) {
   if (pin == AO1) {
     return _ao1_val;
   }
+
+  return -1;
+}
+
+float IonoClass::readAnalogAvg(uint8_t pin, int n) {
+  int nn = n;
+  unsigned long sum = 0;
+
+  if (pin == AV1 || pin == AV2 || pin == AV3 || pin == AV4) {
+    pin = _pinMap[pin];
+    for (; nn > 0; nn--) {
+      sum += analogRead(pin);
+    }
+    return sum / n * IONO_AV_MAX / ANALOG_READ_MAX;
+  }
+
+  if (pin == AI1 || pin == AI2 || pin == AI3 || pin == AI4) {
+    pin = _pinMap[pin];
+    for (; nn > 0; nn--) {
+      sum += analogRead(pin);
+    }
+    return sum / n * IONO_AI_MAX / ANALOG_READ_MAX;
+  }
+
+  return -1;
 }
 
 void IonoClass::write(uint8_t pin, float value) {

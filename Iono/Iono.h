@@ -74,6 +74,7 @@ class IonoClass
     void setBYP(uint8_t pin, bool value);
 #endif
     float read(uint8_t pin);
+    float readAnalogAvg(uint8_t pin, int n);
     void write(uint8_t pin, float value);
     void flip(uint8_t pin);
     void subscribeDigital(uint8_t pin, unsigned long stableTime, Callback *callback);
