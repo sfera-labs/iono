@@ -22,6 +22,8 @@
 #define DO_MAX_INDEX 6
 #endif
 
+#define ANALOG_AVG_N 32
+
 bool IonoModbusRtuSlaveClass::_di1deb;
 bool IonoModbusRtuSlaveClass::_di2deb;
 bool IonoModbusRtuSlaveClass::_di3deb;
@@ -184,10 +186,30 @@ byte IonoModbusRtuSlaveClass::onRequest(byte unitAddr, byte function, word regAd
         }
         return MB_RESP_OK;
       }
+      if (checkAddrRange(regAddr, qty, 211, 214)) {
+        for (int i = regAddr - 210; i < regAddr - 210 + qty; i++) {
+          if (_inMode[i - 1] != 'D') {
+            ModbusRtuSlave.responseAddRegister(Iono.readAnalogAvg(indexToAV(i), ANALOG_AVG_N) * 1000);
+          } else {
+            ModbusRtuSlave.responseAddRegister(0);
+          }
+        }
+        return MB_RESP_OK;
+      }
       if (checkAddrRange(regAddr, qty, 301, 304)) {
         for (int i = regAddr - 300; i < regAddr - 300 + qty; i++) {
           if (_inMode[i - 1] != 'D') {
             ModbusRtuSlave.responseAddRegister(Iono.read(indexToAI(i)) * 1000);
+          } else {
+            ModbusRtuSlave.responseAddRegister(0);
+          }
+        }
+        return MB_RESP_OK;
+      }
+      if (checkAddrRange(regAddr, qty, 311, 314)) {
+        for (int i = regAddr - 310; i < regAddr - 310 + qty; i++) {
+          if (_inMode[i - 1] != 'D') {
+            ModbusRtuSlave.responseAddRegister(Iono.readAnalogAvg(indexToAI(i), ANALOG_AVG_N) * 1000);
           } else {
             ModbusRtuSlave.responseAddRegister(0);
           }
