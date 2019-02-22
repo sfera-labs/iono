@@ -467,6 +467,7 @@ void IonoWebClass::callURL(const char *pin, const char *value) {
         break;
       }
     }
+    client.stop();
   }
 }
 
