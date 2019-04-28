@@ -139,7 +139,7 @@ void IonoLoRaLocalSlave::setUpdatesInterval(uint8_t pin, unsigned long seconds) 
       _in5_min_delay = seconds * 1000;
       break;
     case DI6:
-      _in1_min_delay = seconds * 1000;
+      _in6_min_delay = seconds * 1000;
       break;
   }
 }
