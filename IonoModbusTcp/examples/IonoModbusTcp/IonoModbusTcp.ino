@@ -39,7 +39,7 @@
 #define DELAY  50            // the debounce delay in milliseconds
 #define MAX_SSID_PASS_LEN 30
 
-const PROGMEM char CONSOLE_MENU_HEADER[]  = {"=== Sfera Labs - Modbus TCP server configuration menu - v2.1 ==="};
+const PROGMEM char CONSOLE_MENU_HEADER[]  = {"=== Sfera Labs - Modbus TCP server configuration menu - v2.2 ==="};
 const PROGMEM char CONSOLE_MENU_CURRENT_CONFIG[]  = {"Print current configuration"};
 const PROGMEM char CONSOLE_MENU_MAC[]  = {"MAC address (Eth only)"};
 const PROGMEM char CONSOLE_MENU_IP[]  = {"IP address"};
@@ -157,7 +157,7 @@ void loop() {
         }
       } else {
         WiFi.end();
-        WiFi.begin(ssidCurrent, passCurrent);
+        getNetConfigAndSet();
         server.begin();
         clientAfterReset = false;
       }
