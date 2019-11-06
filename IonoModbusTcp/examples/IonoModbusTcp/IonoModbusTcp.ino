@@ -39,7 +39,7 @@
 #define DELAY  50            // the debounce delay in milliseconds
 #define MAX_SSID_PASS_LEN 30
 
-const PROGMEM char CONSOLE_MENU_HEADER[]  = {"=== Sfera Labs - Modbus TCP server configuration menu - v2.2 ==="};
+const PROGMEM char CONSOLE_MENU_HEADER[]  = {"=== Sfera Labs - Modbus TCP server configuration menu - v3.0 ==="};
 const PROGMEM char CONSOLE_MENU_CURRENT_CONFIG[]  = {"Print current configuration"};
 const PROGMEM char CONSOLE_MENU_MAC[]  = {"MAC address (Eth only)"};
 const PROGMEM char CONSOLE_MENU_IP[]  = {"IP address"};
@@ -83,8 +83,11 @@ char *passNew = NULL;
 #endif
 
 EthernetServer server(502); // Modbus TCP server listening on port 502
+EthernetServer consoleServer(23); // Telnet console server listening on port 23
 
-int consoleState = -1;
+Stream *consoleStream = NULL;
+EthernetClient consoleClient;
+int consoleState = 0;
 boolean serverEnabled;
 int analogOutValue = 0; // 0-10000 mV
 
@@ -111,8 +114,6 @@ byte mbap[7];
 byte pdu[16];
 byte rpdu[16];
 
-bool serialStarted = false;
-
 void setup() {
   // serial console menu
   Serial.begin(9600);
@@ -120,13 +121,14 @@ void setup() {
   // retrieve network settings from EEPROM and initialize server
   if (getNetConfigAndSet()) {
     server.begin();
+    consoleServer.begin();
     serverEnabled = true;
   } else {
     serverEnabled = false;
   }
 
   // set initial status of digital inputs to unknown
-  for (int i = 0; i < sizeof(values) / sizeof(int); i++) {
+  for (int i = 0; i < 6; i++) {
     values[i] = -1;
     lastvalues[i] = -1;
     times[i] = 0;
@@ -149,7 +151,7 @@ void loop() {
   if (serverEnabled) {
 #ifdef IONO_MKR
     ledState = HIGH;
-    if (consoleState == -1) {
+    if (consoleStream == NULL) {
       if (WiFi.status() == WL_CONNECTED) {
         ledState = LOW;
         if (clientAfterReset && millis() - lastClientTs >= 10000) {
@@ -159,28 +161,31 @@ void loop() {
         WiFi.end();
         getNetConfigAndSet();
         server.begin();
+        consoleServer.begin();
         clientAfterReset = false;
       }
     }
     digitalWrite(LED_BUILTIN, ledState);
 #endif
 
-    EthernetClient client = server.available();
-
-    if (client) {
-      while (client.available()) {
-        byte b = client.read();
-        if (b != -1) {
-          if (!inputProcessor(client, b)) {
-            client.stop();
-            break;
+    if (consoleStream == NULL) {
+      EthernetClient client = server.available();
+  
+      if (client) {
+        while (client.available()) {
+          byte b = client.read();
+          if (b != -1) {
+            if (!inputProcessor(client, b)) {
+              client.stop();
+              break;
+            }
           }
         }
+  #ifdef IONO_MKR
+        lastClientTs = millis();
+        clientAfterReset = true;
+  #endif
       }
-#ifdef IONO_MKR
-      lastClientTs = millis();
-      clientAfterReset = true;
-#endif
     }
   }
 }
@@ -432,24 +437,45 @@ void processPdu(EthernetClient client, byte *mbap, byte *pdu) {
 }
 
 void serialConsole() {
-  if (!Serial) {
+  if (consoleStream == NULL) {
+    if (Serial) {
+      consoleStream = &Serial;
+      consoleState = 0;
+      printConsoleMenu();
+    } else {
+      consoleClient = consoleServer.available();
+      if (consoleClient) {
+        consoleStream = &consoleClient;
+        consoleState = 0;
+        printConsoleMenu();
+      } else {
+        return;
+      }
+    }
+  }
+
+  if (consoleClient) {
+    if (!consoleClient.connected()) {
+      consoleClient.stop();
+      consoleStream = NULL;
+#ifdef IONO_MKR
+      WiFi.end();
+#endif
+      return;
+    }
+  } else if (!Serial) {
+    consoleStream = NULL;
     return;
   }
 
-  if (!serialStarted) {
-    serialStarted = true;
-    consoleState = 0;
-    printConsoleMenu();
-  }
-
-  if (Serial.available() > 0) {
-    int c = Serial.read();
+  if (consoleStream->available() > 0) {
+    int c = consoleStream->read();
     switch (consoleState) {
       case 0: // waiting for menu selection number
         switch (c) {
           case '0':
-            Serial.println((char)c);
-            Serial.println();
+            consoleStream->println((char)c);
+            consoleStream->println();
             printlnProgMemString(CONSOLE_CURRENT_CONFIG);
             printConfiguration(macCurrent, ipCurrent, netmaskCurrent, dnsCurrent, gatewayCurrent, ssidCurrent, passCurrent, true);
             printConsoleMenu();
@@ -457,56 +483,56 @@ void serialConsole() {
           case '1':
             consoleState = 1;
             macNew[0] = 0;
-            Serial.println((char)c);
-            Serial.println();
+            consoleStream->println((char)c);
+            consoleStream->println();
             printProgMemString(CONSOLE_TYPE_MAC);
             break;
           case '2':
             consoleState = 2;
             ipNew[0] = 0;
-            Serial.println((char)c);
-            Serial.println();
+            consoleStream->println((char)c);
+            consoleStream->println();
             printProgMemString(CONSOLE_TYPE_IP);
             break;
           case '3':
             consoleState = 3;
             netmaskNew[0] = 0;
-            Serial.println((char)c);
-            Serial.println();
+            consoleStream->println((char)c);
+            consoleStream->println();
             printProgMemString(CONSOLE_TYPE_MASK);
             break;
           case '4':
             consoleState = 4;
             dnsNew[0] = 0;
-            Serial.println((char)c);
-            Serial.println();
+            consoleStream->println((char)c);
+            consoleStream->println();
             printProgMemString(CONSOLE_TYPE_DNS);
             break;
           case '5':
             consoleState = 5;
             gatewayNew[0] = 0;
-            Serial.println((char)c);
-            Serial.println();
+            consoleStream->println((char)c);
+            consoleStream->println();
             printProgMemString(CONSOLE_TYPE_GATEWAY);
             break;
           case '6':
             consoleState = 6;
             ssidNew[0] = 0;
-            Serial.println((char)c);
-            Serial.println();
+            consoleStream->println((char)c);
+            consoleStream->println();
             printProgMemString(CONSOLE_TYPE_SSID);
             break;
           case '7':
             consoleState = 7;
             passNew[0] = 0;
-            Serial.println((char)c);
-            Serial.println();
+            consoleStream->println((char)c);
+            consoleStream->println();
             printProgMemString(CONSOLE_TYPE_PASS);
             break;
           case '8':
             consoleState = 8;
-            Serial.println((char)c);
-            Serial.println();
+            consoleStream->println((char)c);
+            consoleStream->println();
             printlnProgMemString(CONSOLE_NEW_CONFIG);
             printConfiguration(
               (macNew[0] == 0) ? macCurrent : macNew,
@@ -525,7 +551,7 @@ void serialConsole() {
       case 1: // MAC address
         if (stringEdit(macNew, c, 17, true, true, '-')) {
           byte maca[6];
-          Serial.println();
+          consoleStream->println();
           if (!parseMacAddress(macNew, maca)) {
             printlnProgMemString(CONSOLE_ERROR);
             macNew[0] = 0;
@@ -537,7 +563,7 @@ void serialConsole() {
       case 2: // IP address
         if (stringEdit(ipNew, c, 15, true, false, '.')) {
           byte ipa[6];
-          Serial.println();
+          consoleStream->println();
           if (!parseIpAddress(ipNew, ipa)) {
             printlnProgMemString(CONSOLE_ERROR);
             ipNew[0] = 0;
@@ -549,7 +575,7 @@ void serialConsole() {
       case 3: // subnet mask
         if (stringEdit(netmaskNew, c, 15, true, false, '.')) {
           byte netmaska[6];
-          Serial.println();
+          consoleStream->println();
           if (!parseIpAddress(netmaskNew, netmaska)) {
             printlnProgMemString(CONSOLE_ERROR);
             netmaskNew[0] = 0;
@@ -561,7 +587,7 @@ void serialConsole() {
       case 4: // DNS
         if (stringEdit(dnsNew, c, 15, true, false, '.')) {
           byte dnsa[6];
-          Serial.println();
+          consoleStream->println();
           if (!parseIpAddress(dnsNew, dnsa)) {
             printlnProgMemString(CONSOLE_ERROR);
             dnsNew[0] = 0;
@@ -573,7 +599,7 @@ void serialConsole() {
       case 5: // gateway
         if (stringEdit(gatewayNew, c, 15, true, false, '.')) {
           byte ipa[6];
-          Serial.println();
+          consoleStream->println();
           if (!parseIpAddress(gatewayNew, ipa)) {
             printlnProgMemString(CONSOLE_ERROR);
             gatewayNew[0] = 0;
@@ -584,14 +610,14 @@ void serialConsole() {
         break;
       case 6: // ssid
         if (stringEdit(ssidNew, c, MAX_SSID_PASS_LEN, false, false, 0)) {
-          Serial.println();
+          consoleStream->println();
           consoleState = 0;
           printConsoleMenu();
         }
         break;
       case 7: // pass
         if (stringEdit(passNew, c, MAX_SSID_PASS_LEN, false, false, 0)) {
-          Serial.println();
+          consoleStream->println();
           consoleState = 0;
           printConsoleMenu();
         }
@@ -601,7 +627,7 @@ void serialConsole() {
           case 'Y':
           case 'y':
             consoleState = 0;
-            Serial.println('Y');
+            consoleStream->println('Y');
             if (saveNetConfigAndRestart()) {
               printlnProgMemString(CONSOLE_SAVED);
             } else {
@@ -612,8 +638,8 @@ void serialConsole() {
           case 'N':
           case 'n':
             consoleState = 0;
-            Serial.println('N');
-            Serial.println();
+            consoleStream->println('N');
+            consoleStream->println();
             printConsoleMenu();
             break;
         }
@@ -626,7 +652,7 @@ void serialConsole() {
 
 void debounce() {
   int value;
-  for (int i = 0; i < sizeof(values) / sizeof(int); i++) {
+  for (int i = 0; i < 6; i++) {
     value = (Iono.read(indexToDigitalInput(i + 1)) == HIGH) ? 1 : 0;
     if (value != lastvalues[i]) {
       times[i] = millis();
@@ -849,22 +875,22 @@ void softReset() {
 
 void printlnProgMemString(const char* s) {
   printProgMemString(s);
-  Serial.println();
+  consoleStream->println();
 }
 
 void printProgMemString(const char* s) {
   int len = strlen_P(s);
   for (int k = 0; k < len; k++) {
-    Serial.print((char)pgm_read_byte_near(s + k));
+    consoleStream->print((char)pgm_read_byte_near(s + k));
   }
 }
 
 void printConsoleMenu() {
-  Serial.println();
+  consoleStream->println();
   printlnProgMemString(CONSOLE_MENU_HEADER);
   for (int i = 0; i <= 8; i++) {
-    Serial.print(i);
-    Serial.print(". ");
+    consoleStream->print(i);
+    consoleStream->print(". ");
     switch (i) {
       case 0:
         printlnProgMemString(CONSOLE_MENU_CURRENT_CONFIG);
@@ -901,36 +927,36 @@ void printConsoleMenu() {
 void printConfiguration(char *mac, char *ip, char *netmask, char *dns, char *gateway, char *ssid, char *pass, bool printAssignedIp) {
   char s[] = ": ";
   printProgMemString(CONSOLE_MENU_MAC);
-  Serial.print(s);
-  Serial.println(mac);
+  consoleStream->print(s);
+  consoleStream->println(mac);
   printProgMemString(CONSOLE_MENU_IP);
-  Serial.print(s);
-  Serial.println(ip);
+  consoleStream->print(s);
+  consoleStream->println(ip);
   if (printAssignedIp) {
     printProgMemString(CONSOLE_MENU_IP_ASSIGNED);
-    Serial.print(s);
+    consoleStream->print(s);
 #ifdef IONO_MKR
-    Serial.println(WiFi.localIP());
+    consoleStream->println(WiFi.localIP());
 #else
-    Serial.println(Ethernet.localIP());
+    consoleStream->println(Ethernet.localIP());
 #endif
   }
   printProgMemString(CONSOLE_MENU_MASK);
-  Serial.print(s);
-  Serial.println(netmask);
+  consoleStream->print(s);
+  consoleStream->println(netmask);
   printProgMemString(CONSOLE_MENU_DNS);
-  Serial.print(s);
-  Serial.println(dns);
+  consoleStream->print(s);
+  consoleStream->println(dns);
   printProgMemString(CONSOLE_MENU_GATEWAY);
-  Serial.print(s);
-  Serial.println(gateway);
+  consoleStream->print(s);
+  consoleStream->println(gateway);
 #ifdef IONO_MKR
   printProgMemString(CONSOLE_MENU_SSID);
-  Serial.print(s);
-  Serial.println(ssid);
+  consoleStream->print(s);
+  consoleStream->println(ssid);
   printProgMemString(CONSOLE_MENU_PASS);
-  Serial.print(s);
-  Serial.println(pass);
+  consoleStream->print(s);
+  consoleStream->println(pass);
 #endif
 }
 
@@ -940,9 +966,9 @@ boolean stringEdit(char *s, int c, int size, bool filter, bool hex, char sep) {
     case 8: case 127: // backspace
       i = strlen(s);
       if (i > 0) {
-        Serial.print('\b');
-        Serial.print(' ');
-        Serial.print('\b');
+        consoleStream->print('\b');
+        consoleStream->print(' ');
+        consoleStream->print('\b');
         s[i - 1] = 0;
       }
       break;
@@ -958,10 +984,10 @@ boolean stringEdit(char *s, int c, int size, bool filter, bool hex, char sep) {
           c -= 32;
         }
         if (!filter || c >= '0' && c <= '9' || (hex && (c >= 'A' && c <= 'F'))) {
-          Serial.print((char)c);
+          consoleStream->print((char)c);
           strcat_c(s, c);
         } else {
-          Serial.print(sep);
+          consoleStream->print(sep);
           strcat_c(s, sep);
         }
       }

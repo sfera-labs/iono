@@ -48,7 +48,7 @@ void setup() {
   server.begin();
 
   // set initial status of digital inputs to unknown
-  for (int i = 0; i < sizeof(values) / sizeof(int); i++) {
+  for (int i = 0; i < 6; i++) {
     values[i] = -1;
     lastvalues[i] = -1;
     times[i] = 0;
@@ -354,7 +354,7 @@ void processPdu(int clientIdx, byte *mbap, byte *pdu, byte *rpdu) {
 
 void debounce() {
   int value;
-  for (int i = 0; i < sizeof(values) / sizeof(int); i++) {
+  for (int i = 0; i < 6; i++) {
     value = (Iono.read(indexToDigitalInput(i + 1)) == HIGH) ? 1 : 0;
     if (value != lastvalues[i]) {
       times[i] = millis();
