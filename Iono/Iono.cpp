@@ -309,7 +309,19 @@ void IonoClass::check(CallbackMap *input) {
     if ((*input).value != val) {
       float diff = (*input).value - val;
       diff = abs(diff);
-      if (diff >= (*input).minVariation) {
+
+      float maxVal;
+      if ((*input).pin == AV1 || (*input).pin == AV2 || (*input).pin == AV3 || (*input).pin == AV4) {
+        maxVal = IONO_AV_MAX;
+      } else if ((*input).pin == AI1 || (*input).pin == AI2 || (*input).pin == AI3 || (*input).pin == AI4) {
+        maxVal = IONO_AI_MAX;
+      } else if ((*input).pin == AO1) {
+        maxVal = IONO_AO_MAX;
+      } else {
+        maxVal = -1;
+      }
+
+      if (diff >= (*input).minVariation || val == 0 || val == maxVal) {
         if ((ts - (*input).lastTS) >= (*input).stableTime) {
           (*input).value = val;
           (*input).lastTS = ts;
