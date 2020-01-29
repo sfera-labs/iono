@@ -19,6 +19,7 @@ float val = 0;
 int m = 1;
 
 void setup() {
+  Iono.setup();
 }
 
 void loop() {
@@ -33,4 +34,3 @@ void loop() {
   }
   delay(20);
 }
-

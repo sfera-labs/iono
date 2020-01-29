@@ -22,7 +22,11 @@
 
 #include <Iono.h>
 
-#ifdef IONO_MKR
+#if defined(IONO_MKR) || defined(ARDUINO_AVR_UNO_WIFI_REV2)
+#define IONO_WIFI 1
+#endif
+
+#ifdef IONO_WIFI
   #include <WiFiNINA.h>
 #else
   #ifdef ARDUINO_AVR_LEONARDO_ETH
@@ -64,9 +68,9 @@ const PROGMEM char CONSOLE_NEW_CONFIG[]  = {"New network configuration:"};
 const PROGMEM char CONSOLE_ERROR[]  = {"Error"};
 const PROGMEM char CONSOLE_SAVED[]  = {"Saved"};
 
-#ifdef IONO_MKR
-# define EthernetServer WiFiServer
-# define EthernetClient WiFiClient
+#ifdef IONO_WIFI
+#define EthernetServer WiFiServer
+#define EthernetClient WiFiClient
 
 char ssidCurrent[MAX_SSID_PASS_LEN + 1];
 char passCurrent[MAX_SSID_PASS_LEN + 1];
@@ -127,6 +131,8 @@ void setup() {
     serverEnabled = false;
   }
 
+  Iono.setup();
+
   // set initial status of digital inputs to unknown
   for (int i = 0; i < 6; i++) {
     values[i] = -1;
@@ -134,7 +140,7 @@ void setup() {
     times[i] = 0;
   }
 
-#ifdef IONO_MKR
+#ifdef IONO_WIFI
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH);
 #endif
@@ -149,7 +155,7 @@ void loop() {
 
   // Modbus TCP server
   if (serverEnabled) {
-#ifdef IONO_MKR
+#ifdef IONO_WIFI
     ledState = HIGH;
     if (consoleStream == NULL) {
       if (WiFi.status() == WL_CONNECTED) {
@@ -181,7 +187,7 @@ void loop() {
             }
           }
         }
-  #ifdef IONO_MKR
+  #ifdef IONO_WIFI
         lastClientTs = millis();
         clientAfterReset = true;
   #endif
@@ -438,7 +444,7 @@ void processPdu(EthernetClient client, byte *mbap, byte *pdu) {
 
 void serialConsole() {
   if (consoleStream == NULL) {
-    if (Serial) {
+    if (Serial && Serial.available() > 0) {
       consoleStream = &Serial;
       consoleState = 0;
       printConsoleMenu();
@@ -458,7 +464,7 @@ void serialConsole() {
     if (!consoleClient.connected()) {
       consoleClient.stop();
       consoleStream = NULL;
-#ifdef IONO_MKR
+#ifdef IONO_WIFI
       WiFi.end();
 #endif
       return;
@@ -694,7 +700,7 @@ boolean saveNetConfigAndRestart() {
   if (gatewayNew[0] == 0) {
     strcpy(gatewayNew, gatewayCurrent);
   }
-#ifdef IONO_MKR
+#ifdef IONO_WIFI
   if (ssidNew[0] == 0) {
     strcpy(ssidNew, ssidCurrent);
   }
@@ -727,7 +733,7 @@ boolean getNetConfigAndSet() {
     IPAddress dns(dnsa[0], dnsa[1], dnsa[2], dnsa[3]);
     IPAddress subnet(netmaska[0], netmaska[1], netmaska[2], netmaska[3]);
     IPAddress gateway(gatewaya[0], gatewaya[1], gatewaya[2], gatewaya[3]);
-#ifdef IONO_MKR
+#ifdef IONO_WIFI
     WiFi.config(ip, dns, gateway, subnet);
     WiFi.begin(ssidCurrent, passCurrent);
 #else
@@ -765,7 +771,7 @@ boolean writeEepromConfig(char *mac, char *ip, char *netmask, char *dns, char *g
         EEPROM.write(a, netmaska[a - 12]);
         checksum ^= netmaska[a - 12];
       }
-#ifndef IONO_MKR
+#ifndef IONO_WIFI
       for (; a < 22; a++) {
         EEPROM.write(a, maca[a - 16]);
         checksum ^= maca[a - 16];
@@ -827,7 +833,7 @@ boolean readEepromConfig(byte *maca, byte *ipa, byte *netmaska, byte *dnsa, byte
     netmaska[a - 12] = EEPROM.read(a);
     checksum ^= netmaska[a - 12];
   }
-#ifndef IONO_MKR
+#ifndef IONO_WIFI
   for (; a < 22; a++) {
     maca[a - 16] = EEPROM.read(a);
     checksum ^= maca[a - 16];
@@ -935,7 +941,7 @@ void printConfiguration(char *mac, char *ip, char *netmask, char *dns, char *gat
   if (printAssignedIp) {
     printProgMemString(CONSOLE_MENU_IP_ASSIGNED);
     consoleStream->print(s);
-#ifdef IONO_MKR
+#ifdef IONO_WIFI
     consoleStream->println(WiFi.localIP());
 #else
     consoleStream->println(Ethernet.localIP());
@@ -950,7 +956,7 @@ void printConfiguration(char *mac, char *ip, char *netmask, char *dns, char *gat
   printProgMemString(CONSOLE_MENU_GATEWAY);
   consoleStream->print(s);
   consoleStream->println(gateway);
-#ifdef IONO_MKR
+#ifdef IONO_WIFI
   printProgMemString(CONSOLE_MENU_SSID);
   consoleStream->print(s);
   consoleStream->println(ssid);

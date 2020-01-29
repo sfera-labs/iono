@@ -52,6 +52,8 @@ void IonoModbusRtuSlaveClass::begin(byte unitAddr, unsigned long baud, unsigned 
   ModbusRtuSlave.begin(unitAddr, &SERIAL_PORT_HARDWARE, baud, 0);
 #endif
 
+  Iono.setup();
+
   if (_inMode[0] == 0 || _inMode[0] == 'D') {
     Iono.subscribeDigital(DI1, diDebounceTime, &onDIChange);
   }

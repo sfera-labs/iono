@@ -17,6 +17,7 @@
 
 void setup() {
   Serial.begin(9600);
+  Iono.setup();
 
   /*
   / Call onDI1Change() every time

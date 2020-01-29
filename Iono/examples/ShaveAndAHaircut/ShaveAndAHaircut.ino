@@ -16,6 +16,7 @@
 #include <Iono.h>
 
 void setup() {
+  Iono.setup();
 }
 
 void loop() {

@@ -1,7 +1,7 @@
 /*
   Iono.cpp - Arduino library for the control of iono
 
-    Copyright (C) 2014-2018 Sfera Labs S.r.l. - All rights reserved.
+    Copyright (C) 2014-2020 Sfera Labs S.r.l. - All rights reserved.
 
     For information, see the iono web site:
     http://www.sferalabs.cc/iono-arduino
@@ -15,7 +15,7 @@
 
 #include "Iono.h"
 
-#ifdef ARDUINO_ARCH_AVR
+#if defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_ARCH_MEGAAVR)
 #define ANALOG_READ_BITS 10
 #define ANALOG_WRITE_BITS 8
 #else
@@ -90,6 +90,10 @@ IonoClass::IonoClass() {
   _pinMap[AO1] = A0;
 #endif
 
+  setup();
+}
+
+void IonoClass::setup() {
   pinMode(_pinMap[DO1], OUTPUT);
   pinMode(_pinMap[DO2], OUTPUT);
   pinMode(_pinMap[DO3], OUTPUT);
@@ -111,12 +115,10 @@ IonoClass::IonoClass() {
   pinMode(PIN_TXEN, OUTPUT);
 #endif
 
-#ifdef ARDUINO_ARCH_AVR
-  // For Arduino UNO, Ethernet and Leonardo ETH to use the external 3.3V reference
+#if defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_ARCH_MEGAAVR)
+  // For Arduino UNO, Ethernet, Leonardo ETH and UNO WIFI REV2 to use the external 3.3V reference
   analogReference(EXTERNAL);
-#endif
-
-#ifndef ARDUINO_ARCH_AVR
+#else
   analogReadResolution(ANALOG_READ_BITS);
   analogWriteResolution(ANALOG_WRITE_BITS);
 #endif
@@ -410,7 +412,7 @@ float IonoClass::readAnalogAvg(uint8_t pin, int n) {
 
 void IonoClass::write(uint8_t pin, float value) {
   if (pin >= DO1 && pin <= DO6) {
-    digitalWrite(_pinMap[pin], value);
+    digitalWrite(_pinMap[pin], (int) value);
   }
 
   else if (pin == AO1) {

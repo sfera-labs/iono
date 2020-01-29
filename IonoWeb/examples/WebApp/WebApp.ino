@@ -201,6 +201,7 @@ void setField(byte *ip, char *value, char sep, int base) {
 }
 
 void setup() {
+  Iono.setup();
   pinMode(2, INPUT);
   pinMode(3, OUTPUT);
   boolean reset = true;

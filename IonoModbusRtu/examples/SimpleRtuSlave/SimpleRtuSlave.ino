@@ -34,5 +34,3 @@ void loop() {
    */
   IonoModbusRtuSlave.process();
 }
-
-

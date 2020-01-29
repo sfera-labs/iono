@@ -5,7 +5,7 @@
 
     For information, see the iono web site:
     http://www.sferalabs.cc/iono
-  
+
   This code is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
   License as published by the Free Software Foundation; either
@@ -58,6 +58,7 @@ void IonoUDPClass::begin(const char *id, EthernetUDP Udp, unsigned int port, uns
   _port = port;
   _stableTime = stableTime;
   _minVariation = minVariation;
+  Iono.setup();
 }
 
 void IonoUDPClass::process() {
@@ -72,14 +73,14 @@ void IonoUDPClass::checkState() {
   check(DO4);
   check(DO5);
   check(DO6);
-  
+
   check(DI1);
   check(DI2);
   check(DI3);
   check(DI4);
   check(DI5);
   check(DI6);
-  
+
   check(AV1);
   check(AV2);
   check(AV3);
@@ -102,7 +103,7 @@ void IonoUDPClass::checkState() {
       _Udp.endPacket();
       delay(3);
     }
-    
+
     _progr = (_progr + 1) % 10;
     _lastSend = ts;
   }
@@ -139,7 +140,7 @@ void IonoUDPClass::send(int pin, float val) {
   } else {
     ftoa(sVal, val);
   }
-  
+
   for (int i = 0; i < 3; i++) {
     _Udp.beginPacket(_ipBroadcast, _port);
     _Udp.write("{\"id\":\"");
@@ -154,7 +155,7 @@ void IonoUDPClass::send(int pin, float val) {
     _Udp.endPacket();
     delay(3);
   }
-  
+
   _progr = (_progr + 1) % 10;
 }
 
@@ -205,14 +206,14 @@ void IonoUDPClass::checkCommands() {
       _Udp.write("}");
       _Udp.endPacket();
       return;
-      
+
     } else if (strlen(_command) > 4 && _command[3] == '=') {
       char pn[4];
       for (int i = 0; i < 3; i++) {
         pn[i] = _command[i];
       }
       pn[3] = '\0';
-      
+
       int pin = -1;
       for (int i = 0; i < 21; i++) {
         if (strcmp(_pinName[i], pn) == 0) {
@@ -220,7 +221,7 @@ void IonoUDPClass::checkCommands() {
           break;
         }
       }
-      
+
       if (pin != -1) {
         if (pn[0] == 'D') {
           if (_command[4] == 'f') {
@@ -228,7 +229,7 @@ void IonoUDPClass::checkCommands() {
           } else {
             Iono.write(pin, _command[4] == '1' ? HIGH : LOW);
           }
-        
+
         } else {
           char val[6];
           for (int i = 0; i < 5; i++) {
@@ -238,7 +239,7 @@ void IonoUDPClass::checkCommands() {
           Iono.write(pin, atof(val));
         }
       }
-      
+
       _Udp.beginPacket(_Udp.remoteIP(), _Udp.remotePort());
       _Udp.write("ok");
       _Udp.endPacket();

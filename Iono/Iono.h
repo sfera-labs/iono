@@ -1,7 +1,7 @@
 /*
   Iono.h - Arduino library for the control of iono
 
-    Copyright (C) 2014-2018 Sfera Labs S.r.l. - All rights reserved.
+    Copyright (C) 2014-2020 Sfera Labs S.r.l. - All rights reserved.
 
     For information, see the iono web site:
     http://www.sferalabs.cc/iono-arduino
@@ -22,7 +22,7 @@
 #include "WProgram.h"
 #endif
 
-#if defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_SAMD_ZERO)
+#if defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_SAMD_ZERO) || defined(ARDUINO_AVR_UNO_WIFI_REV2)
 #define IONO_ARDUINO 1
 #else
 #define IONO_MKR 1
@@ -73,6 +73,7 @@ class IonoClass
 #ifdef IONO_MKR
     void setBYP(uint8_t pin, bool value);
 #endif
+    void setup();
     float read(uint8_t pin);
     float readAnalogAvg(uint8_t pin, int n);
     void write(uint8_t pin, float value);

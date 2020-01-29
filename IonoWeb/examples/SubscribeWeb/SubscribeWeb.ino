@@ -26,6 +26,7 @@ IPAddress gateway(192, 168, 1, 1);
 IPAddress subnet(255, 255, 255, 0);
 
 void setup() {
+  Iono.setup();
   Ethernet.begin(mac, ip, gateway, subnet);
   IonoWeb.begin(80);
   
@@ -56,4 +57,3 @@ void loop() {
   // Check all the inputs
   Iono.process();
 }
-

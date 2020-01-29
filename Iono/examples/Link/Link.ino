@@ -16,6 +16,7 @@
 #include <Iono.h>
 
 void setup() {
+  Iono.setup();
   Iono.linkDiDo(DI1, DO1, LINK_FOLLOW, 100);
   Iono.linkDiDo(DI2, DO2, LINK_INVERT, 100);
   Iono.linkDiDo(DI3, DO3, LINK_FLIP_T, 100);
@@ -26,4 +27,3 @@ void loop() {
   Iono.process();
   delay(20);
 }
-

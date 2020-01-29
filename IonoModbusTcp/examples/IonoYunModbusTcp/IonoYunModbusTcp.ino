@@ -47,6 +47,8 @@ void setup() {
   server.noListenOnLocalhost();
   server.begin();
 
+  Iono.setup();
+
   // set initial status of digital inputs to unknown
   for (int i = 0; i < 6; i++) {
     values[i] = -1;
