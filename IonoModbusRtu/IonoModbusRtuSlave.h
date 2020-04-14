@@ -17,6 +17,7 @@
 #define IonoModbusRtuSlave_h
 
 #include <ModbusRtuSlave.h>
+#include <Iono.h>
 
 #define MB_RESP_PASS 0xFE
 
@@ -24,8 +25,9 @@ class IonoModbusRtuSlaveClass {
   public:
     static void begin(byte unitAddr, unsigned long baud, unsigned long config, unsigned long diDebounceTime);
     static void process();
-    static void setCustomHandler(Callback *callback);
+    static void setCustomHandler(ModbusRtuSlaveClass::Callback *callback);
     static void setInputMode(int idx, char mode);
+    static void subscribeDigital(uint8_t pin, IonoClass::Callback *callback);
 
   private:
     static bool _di1deb;
@@ -42,9 +44,16 @@ class IonoModbusRtuSlaveClass {
     static word _di5count;
     static word _di6count;
 
+    static IonoClass::Callback *_di1Callback;
+    static IonoClass::Callback *_di2Callback;
+    static IonoClass::Callback *_di3Callback;
+    static IonoClass::Callback *_di4Callback;
+    static IonoClass::Callback *_di5Callback;
+    static IonoClass::Callback *_di6Callback;
+
     static char _inMode[4];
 
-    static Callback *_customCallback;
+    static ModbusRtuSlaveClass::Callback *_customCallback;
 
     static byte onRequest(byte unitAddr, byte function, word regAddr, word qty, byte *data);
     static void onDIChange(uint8_t pin, float value);

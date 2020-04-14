@@ -14,7 +14,6 @@
 */
 
 #include "IonoModbusRtuSlave.h"
-#include <Iono.h>
 
 #ifdef IONO_MKR
 #define DO_MAX_INDEX 4
@@ -38,9 +37,16 @@ word IonoModbusRtuSlaveClass::_di4count = 0;
 word IonoModbusRtuSlaveClass::_di5count = 0;
 word IonoModbusRtuSlaveClass::_di6count = 0;
 
+IonoClass::Callback *IonoModbusRtuSlaveClass::_di1Callback = NULL;
+IonoClass::Callback *IonoModbusRtuSlaveClass::_di2Callback = NULL;
+IonoClass::Callback *IonoModbusRtuSlaveClass::_di3Callback = NULL;
+IonoClass::Callback *IonoModbusRtuSlaveClass::_di4Callback = NULL;
+IonoClass::Callback *IonoModbusRtuSlaveClass::_di5Callback = NULL;
+IonoClass::Callback *IonoModbusRtuSlaveClass::_di6Callback = NULL;
+
 char IonoModbusRtuSlaveClass::_inMode[4] = {0, 0, 0, 0};
 
-Callback *IonoModbusRtuSlaveClass::_customCallback = NULL;
+ModbusRtuSlaveClass::Callback *IonoModbusRtuSlaveClass::_customCallback = NULL;
 
 void IonoModbusRtuSlaveClass::begin(byte unitAddr, unsigned long baud, unsigned long config, unsigned long diDebounceTime) {
   SERIAL_PORT_HARDWARE.begin(baud, config);
@@ -82,8 +88,36 @@ void IonoModbusRtuSlaveClass::process() {
   Iono.process();
 }
 
-void IonoModbusRtuSlaveClass::setCustomHandler(Callback *callback) {
+void IonoModbusRtuSlaveClass::setCustomHandler(ModbusRtuSlaveClass::Callback *callback) {
   _customCallback = callback;
+}
+
+void IonoModbusRtuSlaveClass::subscribeDigital(uint8_t pin, IonoClass::Callback *callback) {
+  switch (pin) {
+    case DI1:
+      _di1Callback = callback;
+      break;
+
+    case DI2:
+      _di2Callback = callback;
+      break;
+
+    case DI3:
+      _di3Callback = callback;
+      break;
+
+    case DI4:
+      _di4Callback = callback;
+      break;
+
+    case DI5:
+      _di5Callback = callback;
+      break;
+
+    case DI6:
+      _di6Callback = callback;
+      break;
+  }
 }
 
 void IonoModbusRtuSlaveClass::onDIChange(uint8_t pin, float value) {
@@ -93,12 +127,18 @@ void IonoModbusRtuSlaveClass::onDIChange(uint8_t pin, float value) {
       if (_di1deb) {
         _di1count++;
       }
+      if (_di1Callback != NULL) {
+        _di1Callback(pin, value);
+      }
       break;
 
     case DI2:
       _di2deb = value == HIGH;
       if (_di2deb) {
         _di2count++;
+      }
+      if (_di2Callback != NULL) {
+        _di2Callback(pin, value);
       }
       break;
 
@@ -107,12 +147,18 @@ void IonoModbusRtuSlaveClass::onDIChange(uint8_t pin, float value) {
       if (_di3deb) {
         _di3count++;
       }
+      if (_di3Callback != NULL) {
+        _di3Callback(pin, value);
+      }
       break;
 
     case DI4:
       _di4deb = value == HIGH;
       if (_di4deb) {
         _di4count++;
+      }
+      if (_di4Callback != NULL) {
+        _di4Callback(pin, value);
       }
       break;
 
@@ -121,12 +167,18 @@ void IonoModbusRtuSlaveClass::onDIChange(uint8_t pin, float value) {
       if (_di5deb) {
         _di5count++;
       }
+      if (_di5Callback != NULL) {
+        _di5Callback(pin, value);
+      }
       break;
 
     case DI6:
       _di6deb = value == HIGH;
       if (_di6deb) {
         _di6count++;
+      }
+      if (_di6Callback != NULL) {
+        _di6Callback(pin, value);
       }
       break;
   }
