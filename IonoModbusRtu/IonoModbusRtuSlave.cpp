@@ -1,10 +1,10 @@
 /*
   IonoModbusRtuSlave.cpp - Modbus RTU Slave library for Iono Arduino and Iono MKR
 
-    Copyright (C) 2018 Sfera Labs S.r.l. - All rights reserved.
+    Copyright (C) 2018-2021 Sfera Labs S.r.l. - All rights reserved.
 
-    For information, see the iono web site:
-    http://www.sferalabs.cc/iono-arduino
+    For information, see:
+    https://www.sferalabs.cc/
 
   This code is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -14,6 +14,8 @@
 */
 
 #include "IonoModbusRtuSlave.h"
+#include <OneWire.h>
+#include <DallasTemperature.h>
 
 #ifdef IONO_MKR
 #define DO_MAX_INDEX 4
@@ -22,6 +24,9 @@
 #endif
 
 #define ANALOG_AVG_N 32
+#define ONE_WIRE_BUS_DI5 0
+#define ONE_WIRE_BUS_DI6 1
+#define ONE_WIRE_REQ_ITVL 10000
 
 bool IonoModbusRtuSlaveClass::_di1deb;
 bool IonoModbusRtuSlaveClass::_di2deb;
@@ -47,6 +52,17 @@ IonoClass::Callback *IonoModbusRtuSlaveClass::_di6Callback = NULL;
 char IonoModbusRtuSlaveClass::_inMode[4] = {0, 0, 0, 0};
 
 ModbusRtuSlaveClass::Callback *IonoModbusRtuSlaveClass::_customCallback = NULL;
+
+OneWire oneWireDi5(ONE_WIRE_BUS_DI5);
+OneWire oneWireDi6(ONE_WIRE_BUS_DI6);
+DallasTemperature sensorsDi5(&oneWireDi5);
+DallasTemperature sensorsDi6(&oneWireDi6);
+DeviceAddress sensorsAddressDi5[8];
+DeviceAddress sensorsAddressDi6[8];
+int sensorsCountDi5 = -1;
+int sensorsCountDi6 = -1;
+long sensorsReqTsDi5;
+long sensorsReqTsDi6;
 
 void IonoModbusRtuSlaveClass::begin(byte unitAddr, unsigned long baud, unsigned long config, unsigned long diDebounceTime) {
   SERIAL_PORT_HARDWARE.begin(baud, config);
@@ -86,6 +102,14 @@ void IonoModbusRtuSlaveClass::setInputMode(int idx, char mode) {
 void IonoModbusRtuSlaveClass::process() {
   ModbusRtuSlave.process();
   Iono.process();
+  if (sensorsCountDi5 > 0 && millis() - sensorsReqTsDi5 > ONE_WIRE_REQ_ITVL) {
+    sensorsDi5.requestTemperatures();
+    sensorsReqTsDi5 = millis();
+  }
+  if (sensorsCountDi6 > 0 && millis() - sensorsReqTsDi6 > ONE_WIRE_REQ_ITVL) {
+    sensorsDi6.requestTemperatures();
+    sensorsReqTsDi6 = millis();
+  }
 }
 
 void IonoModbusRtuSlaveClass::setCustomHandler(ModbusRtuSlaveClass::Callback *callback) {
@@ -227,6 +251,54 @@ byte IonoModbusRtuSlaveClass::onRequest(byte unitAddr, byte function, word regAd
         ModbusRtuSlave.responseAddRegister(Iono.read(AO1) * 1000);
         return MB_RESP_OK;
       }
+      if (regAddr == 5000 && qty == 1) {
+        sensorsDi5.begin();
+        sensorsCountDi5 = sensorsDi5.getDeviceCount();
+        for (int i = 0; i < sensorsCountDi5; i++) {
+          sensorsDi5.getAddress(sensorsAddressDi5[i], i);
+        }
+        sensorsDi5.setWaitForConversion(false);
+        sensorsDi5.requestTemperatures();
+        sensorsReqTsDi5 = millis();
+        ModbusRtuSlave.responseAddRegister(sensorsCountDi5);
+        return MB_RESP_OK;
+      }
+      if (checkAddrRange(regAddr, qty, 5001, 5064)) {
+        for (int i = regAddr - 5001; i < regAddr - 5001 + qty; i++) {
+          int a = i / 8;
+          int b = i % 8;
+          if (a < sensorsCountDi5) {
+            ModbusRtuSlave.responseAddRegister(sensorsAddressDi5[a][b]);
+          } else {
+            ModbusRtuSlave.responseAddRegister(0);
+          }
+        }
+        return MB_RESP_OK;
+      }
+      if (regAddr == 6000 && qty == 1) {
+        sensorsDi6.begin();
+        sensorsCountDi6 = sensorsDi6.getDeviceCount();
+        for (int i = 0; i < sensorsCountDi6; i++) {
+          sensorsDi6.getAddress(sensorsAddressDi6[i], i);
+        }
+        sensorsDi6.setWaitForConversion(false);
+        sensorsDi6.requestTemperatures();
+        sensorsReqTsDi6 = millis();
+        ModbusRtuSlave.responseAddRegister(sensorsCountDi6);
+        return MB_RESP_OK;
+      }
+      if (checkAddrRange(regAddr, qty, 6001, 6064)) {
+        for (int i = regAddr - 6001; i < regAddr - 6001 + qty; i++) {
+          int a = i / 8;
+          int b = i % 8;
+          if (a < sensorsCountDi6) {
+            ModbusRtuSlave.responseAddRegister(sensorsAddressDi6[a][b]);
+          } else {
+            ModbusRtuSlave.responseAddRegister(0);
+          }
+        }
+        return MB_RESP_OK;
+      }
       return MB_EX_ILLEGAL_DATA_ADDRESS;
 
     case MB_FC_READ_INPUT_REGISTER:
@@ -276,6 +348,23 @@ byte IonoModbusRtuSlaveClass::onRequest(byte unitAddr, byte function, word regAd
         }
         return MB_RESP_OK;
       }
+      if (checkAddrRange(regAddr, qty, 5101, 5108)) {
+        if (qty <= sensorsCountDi5) {
+          for (int i = regAddr - 5101; i < regAddr - 5101 + qty; i++) {
+            ModbusRtuSlave.responseAddRegister((int)(sensorsDi5.getTempC(sensorsAddressDi5[i]) * 100.0));
+          }
+          return MB_RESP_OK;
+        }
+      }
+      if (checkAddrRange(regAddr, qty, 6101, 6108)) {
+        if (qty <= sensorsCountDi6) {
+          sensorsDi6.requestTemperatures();
+          for (int i = regAddr - 6101; i < regAddr - 6101 + qty; i++) {
+            ModbusRtuSlave.responseAddRegister((int)(sensorsDi6.getTempC(sensorsAddressDi6[i]) * 100.0));
+          }
+          return MB_RESP_OK;
+        }
+      }
       if (regAddr == 99 && qty == 1) {
 #ifdef IONO_MKR
         ModbusRtuSlave.responseAddRegister(0x20);
@@ -292,7 +381,7 @@ byte IonoModbusRtuSlaveClass::onRequest(byte unitAddr, byte function, word regAd
 #else
         ModbusRtuSlave.responseAddRegister(0x1001); // Iono Arduino - App ID: Modbus RTU
 #endif
-        ModbusRtuSlave.responseAddRegister(0x0301); // Version High - Version Low
+        ModbusRtuSlave.responseAddRegister(0x0400); // Version High - Version Low
         return MB_RESP_OK;
       }
       return MB_EX_ILLEGAL_DATA_ADDRESS;

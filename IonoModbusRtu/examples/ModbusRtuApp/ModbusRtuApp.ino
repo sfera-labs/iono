@@ -1,10 +1,10 @@
 /*
   ModbusRtuApp.cpp - A configurable Modbus RTU Slave for Iono Arduino and Iono MKR
 
-    Copyright (C) 2016-2018 Sfera Labs S.r.l. - All rights reserved.
+    Copyright (C) 2016-2021 Sfera Labs S.r.l. - All rights reserved.
 
     For information, see:
-    http://www.sferalabs.cc/iono-arduino
+    https://www.sferalabs.cc/
 
   This code is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -26,7 +26,7 @@
 #define DELAY  25                           // the debounce delay in milliseconds
 #define BOOT_CONSOLE_TIMEOUT_MILLIS 15000   // if 5 consecutive spaces are received within this time interval after boot, enter console mode
 
-const PROGMEM char CONSOLE_MENU_HEADER[]  = {"=== Sfera Labs - Modbus RTU Slave configuration menu - v3.1 ==="};
+const PROGMEM char CONSOLE_MENU_HEADER[]  = {"=== Sfera Labs - Modbus RTU Slave configuration menu - v4.0 ==="};
 const PROGMEM char CONSOLE_MENU_CURRENT_CONFIG[]  = {"Print current configuration"};
 const PROGMEM char CONSOLE_MENU_SPEED[]  = {"Speed (baud)"};
 const PROGMEM char CONSOLE_MENU_PARITY[]  = {"Parity"};
