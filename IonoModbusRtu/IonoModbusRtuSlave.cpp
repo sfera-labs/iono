@@ -61,8 +61,12 @@ DeviceAddress sensorsAddressDi5[8];
 DeviceAddress sensorsAddressDi6[8];
 int sensorsCountDi5 = -1;
 int sensorsCountDi6 = -1;
-long sensorsReqTsDi5;
-long sensorsReqTsDi6;
+unsigned long sensorsReqTsDi5;
+unsigned long sensorsReqTsDi6;
+
+bool doTempEnabled[DO_MAX_INDEX];
+unsigned long doTempStart[DO_MAX_INDEX];
+unsigned long doTempTime[DO_MAX_INDEX];
 
 void IonoModbusRtuSlaveClass::begin(byte unitAddr, unsigned long baud, unsigned long config, unsigned long diDebounceTime) {
   SERIAL_PORT_HARDWARE.begin(baud, config);
@@ -109,6 +113,12 @@ void IonoModbusRtuSlaveClass::process() {
   if (sensorsCountDi6 > 0 && millis() - sensorsReqTsDi6 > ONE_WIRE_REQ_ITVL) {
     sensorsDi6.requestTemperatures();
     sensorsReqTsDi6 = millis();
+  }
+  for (int i = 0; i < DO_MAX_INDEX; i++) {
+    if (doTempEnabled[i] && millis() - doTempStart[i] > doTempTime[i]) {
+      Iono.write(indexToDO(i + 1), LOW);
+      doTempEnabled[i] = false;
+    }
   }
 }
 
@@ -394,6 +404,7 @@ byte IonoModbusRtuSlaveClass::onRequest(byte unitAddr, byte function, word regAd
       }
       return MB_EX_ILLEGAL_DATA_ADDRESS;
 
+    case MB_FC_WRITE_MULTIPLE_REGISTERS:
     case MB_FC_WRITE_SINGLE_REGISTER:
       if (regAddr == 601) {
         word value = ModbusRtuSlave.getDataRegister(function, data, 0);
@@ -401,6 +412,17 @@ byte IonoModbusRtuSlaveClass::onRequest(byte unitAddr, byte function, word regAd
           return MB_EX_ILLEGAL_DATA_VALUE;
         }
         Iono.write(AO1, value / 1000.0);
+        return MB_RESP_OK;
+      }
+      if (checkAddrRange(regAddr, qty, 11, 10 + DO_MAX_INDEX)) {
+        for (int i = regAddr - 10; i < regAddr - 10 + qty; i++) {
+          doTempTime[i - 1] = 100 * ModbusRtuSlave.getDataRegister(function, data, i - (regAddr - 10));
+          if (doTempTime[i - 1] > 0) {
+            doTempEnabled[i - 1] = true;
+            doTempStart[i - 1] = millis();
+            Iono.write(indexToDO(i), HIGH);
+          }
+        }
         return MB_RESP_OK;
       }
       return MB_EX_ILLEGAL_DATA_ADDRESS;
