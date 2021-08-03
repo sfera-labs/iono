@@ -69,16 +69,18 @@ unsigned long doTempStart[DO_MAX_INDEX];
 unsigned long doTempTime[DO_MAX_INDEX];
 
 void IonoModbusRtuSlaveClass::begin(byte unitAddr, unsigned long baud, unsigned long config, unsigned long diDebounceTime) {
+  Iono.setup();
+
   SERIAL_PORT_HARDWARE.begin(baud, config);
   ModbusRtuSlave.setCallback(&IonoModbusRtuSlaveClass::onRequest);
 
 #ifdef PIN_TXEN
   ModbusRtuSlave.begin(unitAddr, &SERIAL_PORT_HARDWARE, baud, PIN_TXEN);
+#elif defined(PIN_TXEN_N)
+  ModbusRtuSlave.begin(unitAddr, &SERIAL_PORT_HARDWARE, baud, PIN_TXEN_N, true);
 #else
   ModbusRtuSlave.begin(unitAddr, &SERIAL_PORT_HARDWARE, baud, 0);
 #endif
-
-  Iono.setup();
 
   if (_inMode[0] == 0 || _inMode[0] == 'D') {
     Iono.subscribeDigital(DI1, diDebounceTime, &onDIChange);
@@ -460,6 +462,8 @@ uint8_t IonoModbusRtuSlaveClass::indexToDO(int i) {
       return DO5;
     case 6:
       return DO6;
+    default:
+      return -1;
   }
 }
 
@@ -477,6 +481,8 @@ uint8_t IonoModbusRtuSlaveClass::indexToDI(int i) {
       return DI5;
     case 6:
       return DI6;
+    default:
+      return -1;
   }
 }
 
@@ -494,6 +500,8 @@ bool IonoModbusRtuSlaveClass::indexToDIdeb(int i) {
       return _di5deb;
     case 6:
       return _di6deb;
+    default:
+      return false;
   }
 }
 
@@ -511,6 +519,8 @@ word IonoModbusRtuSlaveClass::indexToDIcount(int i) {
       return _di5count;
     case 6:
       return _di6count;
+    default:
+      return -1;
   }
 }
 
@@ -524,6 +534,8 @@ uint8_t IonoModbusRtuSlaveClass::indexToAV(int i) {
       return AV3;
     case 4:
       return AV4;
+    default:
+      return -1;
   }
 }
 
@@ -537,5 +549,7 @@ uint8_t IonoModbusRtuSlaveClass::indexToAI(int i) {
       return AI3;
     case 4:
       return AI4;
+    default:
+      return -1;
   }
 }

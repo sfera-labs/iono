@@ -18,6 +18,9 @@
 #if defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_ARCH_MEGAAVR)
 #define ANALOG_READ_BITS 10
 #define ANALOG_WRITE_BITS 8
+#elif defined(IONO_RP)
+#define ANALOG_READ_BITS 12
+#define ANALOG_WRITE_BITS 16
 #else
 #define ANALOG_READ_BITS 12
 #define ANALOG_WRITE_BITS 10
@@ -35,60 +38,122 @@
 #define ANALOG_READ_MAX ((1 << ANALOG_READ_BITS) - 1)
 #define ANALOG_WRITE_MAX ((1 << ANALOG_WRITE_BITS) - 1)
 
-IonoClass::IonoClass() {
 #ifdef IONO_ARDUINO
-  _pinMap[DO1] = A4;
-  _pinMap[DO2] = A5;
-  _pinMap[DO3] = 5;
-  _pinMap[DO4] = 6;
-  _pinMap[DO5] = 7;
-  _pinMap[DO6] = 8;
+  #define IONO_PIN_DO1 A4
+  #define IONO_PIN_DO2 A5
+  #define IONO_PIN_DO3 5
+  #define IONO_PIN_DO4 6
+  #define IONO_PIN_DO5 7
+  #define IONO_PIN_DO6 8
 
-  _pinMap[DI1] = A0;
-  _pinMap[AV1] = A0;
-  _pinMap[AI1] = A0;
+  #define IONO_PIN_DI1 A0
+  #define IONO_PIN_AV1 A0
+  #define IONO_PIN_AI1 A0
 
-  _pinMap[DI2] = A1;
-  _pinMap[AV2] = A1;
-  _pinMap[AI2] = A1;
+  #define IONO_PIN_DI2 A1
+  #define IONO_PIN_AV2 A1
+  #define IONO_PIN_AI2 A1
 
-  _pinMap[DI3] = A2;
-  _pinMap[AV3] = A2;
-  _pinMap[AI3] = A2;
+  #define IONO_PIN_DI3 A2
+  #define IONO_PIN_AV3 A2
+  #define IONO_PIN_AI3 A2
 
-  _pinMap[DI4] = A3;
-  _pinMap[AV4] = A3;
-  _pinMap[AI4] = A3;
+  #define IONO_PIN_DI4 A3
+  #define IONO_PIN_AV4 A3
+  #define IONO_PIN_AI4 A3
 
-  _pinMap[DI5] = 2;
-  _pinMap[DI6] = 3;
-  _pinMap[AO1] = 9;
+  #define IONO_PIN_DI5 2
+  #define IONO_PIN_DI6 3
+  #define IONO_PIN_AO1 9
+#elif defined(IONO_RP)
+  #define IONO_PIN_DO1 13
+  #define IONO_PIN_DO2 12
+  #define IONO_PIN_DO3 11
+  #define IONO_PIN_DO4 11
+
+  #define IONO_PIN_DI1 26
+  #define IONO_PIN_AV1 26
+  #define IONO_PIN_AI1 26
+
+  #define IONO_PIN_DI2 27
+  #define IONO_PIN_AV2 27
+  #define IONO_PIN_AI2 27
+
+  #define IONO_PIN_DI3 28
+  #define IONO_PIN_AV3 28
+  #define IONO_PIN_AI3 28
+
+  #define IONO_PIN_DI4 29
+  #define IONO_PIN_AV4 29
+  #define IONO_PIN_AI4 29
+
+  #define IONO_PIN_DI5 24
+  #define IONO_PIN_DI6 23
+  #define IONO_PIN_DI5_BYP 7
+  #define IONO_PIN_DI6_BYP 6
+
+  #define IONO_PIN_AO1 8
 #else
-  _pinMap[DO1] = 3;
-  _pinMap[DO2] = 2;
-  _pinMap[DO3] = A6;
-  _pinMap[DO4] = A5;
+  #define IONO_PIN_DO1 3
+  #define IONO_PIN_DO2 2
+  #define IONO_PIN_DO3 A6
+  #define IONO_PIN_DO4 A5
 
-  _pinMap[DI1] = A1;
-  _pinMap[AV1] = A1;
-  _pinMap[AI1] = A1;
+  #define IONO_PIN_DI1 A1
+  #define IONO_PIN_AV1 A1
+  #define IONO_PIN_AI1 A1
 
-  _pinMap[DI2] = A2;
-  _pinMap[AV2] = A2;
-  _pinMap[AI2] = A2;
+  #define IONO_PIN_DI2 A2
+  #define IONO_PIN_AV2 A2
+  #define IONO_PIN_AI2 A2
 
-  _pinMap[DI3] = A3;
-  _pinMap[AV3] = A3;
-  _pinMap[AI3] = A3;
+  #define IONO_PIN_DI3 A3
+  #define IONO_PIN_AV3 A3
+  #define IONO_PIN_AI3 A3
 
-  _pinMap[DI4] = A4;
-  _pinMap[AV4] = A4;
-  _pinMap[AI4] = A4;
+  #define IONO_PIN_DI4 A4
+  #define IONO_PIN_AV4 A4
+  #define IONO_PIN_AI4 A4
 
-  _pinMap[DI5] = 7;
-  _pinMap[DI6] = 5;
-  _pinMap[AO1] = A0;
+  #define IONO_PIN_DI5 7
+  #define IONO_PIN_DI6 5
+  #define IONO_PIN_DI5_BYP 0
+  #define IONO_PIN_DI6_BYP 1
+
+  #define IONO_PIN_AO1 A0
 #endif
+
+IonoClass::IonoClass() {
+  _pinMap[DO1] = IONO_PIN_DO1;
+  _pinMap[DO2] = IONO_PIN_DO2;
+  _pinMap[DO3] = IONO_PIN_DO3;
+  _pinMap[DO4] = IONO_PIN_DO4;
+#ifdef IONO_PIN_DO5
+  _pinMap[DO5] = IONO_PIN_DO5;
+#endif
+#ifdef IONO_PIN_DO6
+  _pinMap[DO6] = IONO_PIN_DO6;
+#endif
+
+  _pinMap[DI1] = IONO_PIN_DI1;
+  _pinMap[AV1] = IONO_PIN_AV1;
+  _pinMap[AI1] = IONO_PIN_AI1;
+
+  _pinMap[DI2] = IONO_PIN_DI2;
+  _pinMap[AV2] = IONO_PIN_AV2;
+  _pinMap[AI2] = IONO_PIN_AI2;
+
+  _pinMap[DI3] = IONO_PIN_DI3;
+  _pinMap[AV3] = IONO_PIN_AV3;
+  _pinMap[AI3] = IONO_PIN_AI3;
+
+  _pinMap[DI4] = IONO_PIN_DI4;
+  _pinMap[AV4] = IONO_PIN_AV4;
+  _pinMap[AI4] = IONO_PIN_AI4;
+
+  _pinMap[DI5] = IONO_PIN_DI5;
+  _pinMap[DI6] = IONO_PIN_DI6;
+  _pinMap[AO1] = IONO_PIN_AO1;
 
   setup();
 }
@@ -114,10 +179,25 @@ void IonoClass::setup() {
 #ifdef PIN_TXEN
   pinMode(PIN_TXEN, OUTPUT);
 #endif
+#ifdef PIN_TXEN_N
+  pinMode(PIN_TXEN_N, OUTPUT);
+#endif
+
+  serialTxEn(false);
+
+#ifdef IONO_RP
+  pinMode(17, INPUT);
+  pinMode(16, OUTPUT);
+  IONO_RS485.setRX(17);
+  IONO_RS485.setTX(16);
+#endif
 
 #if defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_ARCH_MEGAAVR)
   // For Arduino UNO, Ethernet, Leonardo ETH and UNO WIFI REV2 to use the external 3.3V reference
   analogReference(EXTERNAL);
+#elif defined(IONO_RP)
+  // TODO analogWriteFreq(?)
+  analogWriteResolution(ANALOG_WRITE_BITS);
 #else
   analogReadResolution(ANALOG_READ_BITS);
   analogWriteResolution(ANALOG_WRITE_BITS);
@@ -126,13 +206,13 @@ void IonoClass::setup() {
   write(AO1, 0);
 }
 
-#ifdef IONO_MKR
+#if defined(IONO_MKR) || defined(IONO_RP)
 void IonoClass::setBYP(uint8_t pin, bool value) {
   if (pin == DI5) {
-    _pinMap[DI5] = value ? 0 : 7;
+    _pinMap[DI5] = value ? IONO_PIN_DI5_BYP : IONO_PIN_DI5;
     pinMode(_pinMap[DI5], INPUT);
   } else if (pin == DI6) {
-    _pinMap[DI6] = value ? 1 : 5;
+    _pinMap[DI6] = value ? IONO_PIN_DI6_BYP : IONO_PIN_DI6;
     pinMode(_pinMap[DI6], INPUT);
   }
 }
@@ -428,6 +508,15 @@ void IonoClass::write(uint8_t pin, float value) {
 
 void IonoClass::flip(uint8_t pin) {
   write(pin, read(pin) == HIGH ? LOW : HIGH);
+}
+
+void IonoClass::serialTxEn(bool enabled) {
+#ifdef PIN_TXEN
+  digitalWrite(PIN_TXEN, enabled ? HIGH : LOW);
+#endif
+#ifdef PIN_TXEN_N
+  digitalWrite(PIN_TXEN_N, enabled ? LOW : HIGH);
+#endif
 }
 
 IonoClass Iono;

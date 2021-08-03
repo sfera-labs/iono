@@ -18,10 +18,9 @@
 
 #include <Iono.h>
 
-#define RS485 SERIAL_PORT_HARDWARE
 #define MAX_LEN 512
 
-byte rxBuff[MAX_LEN];
+byte rxBuff[MAX_LEN + 1];
 int rxIdx;
 
 void setup() {
@@ -34,38 +33,30 @@ void setup() {
    * parity: none
    * stop bits: 2
    */
-  RS485.begin(19200, SERIAL_8N2);
-
-#ifdef PIN_TXEN;
-  pinMode(PIN_TXEN, OUTPUT);
-#endif
+  IONO_RS485.begin(19200, SERIAL_8N2);
 }
 
 void loop() {
-  if (RS485.available() > 0) {
+  if (IONO_RS485.available() > 0) {
     rxIdx = 0;
 
     // Read into buffer while data is available
-    while(RS485.available() > 0 && rxIdx <= MAX_LEN) {
-      rxBuff[rxIdx++] = RS485.read();
-      if (RS485.available() == 0) {
+    while(IONO_RS485.available() > 0 && rxIdx <= MAX_LEN) {
+      rxBuff[rxIdx++] = IONO_RS485.read();
+      if (IONO_RS485.available() == 0) {
         // give it some extra time to check if
         // any other data is on its way...
-        delay(20);
+        delay(50);
       }
     }
     
-#ifdef PIN_TXEN;
-    digitalWrite(PIN_TXEN, HIGH);
-#endif
+    Iono.serialTxEn(true);
 
-    RS485.write(rxBuff, rxIdx);
-    RS485.flush();
+    IONO_RS485.write(rxBuff, rxIdx);
+    IONO_RS485.flush();
 
-#ifdef PIN_TXEN;
-    digitalWrite(PIN_TXEN, LOW);
-#endif
+    Iono.serialTxEn(false);
   }
   
-  delay(20);
+  delay(50);
 }

@@ -24,6 +24,8 @@
 
 #if defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_SAMD_ZERO) || defined(ARDUINO_AVR_UNO_WIFI_REV2)
 #define IONO_ARDUINO 1
+#elif defined(ARDUINO_ARCH_RP2040)
+#define IONO_RP 1
 #else
 #define IONO_MKR 1
 #endif
@@ -59,6 +61,14 @@
 #define PIN_TXEN 4
 #endif
 
+#ifdef IONO_RP
+#define PIN_TXEN_N 25
+#define SERIAL_PORT_MONITOR Serial
+#define SERIAL_PORT_HARDWARE Serial1
+#endif
+
+#define IONO_RS485 SERIAL_PORT_HARDWARE
+
 #define LINK_FOLLOW 1
 #define LINK_INVERT 2
 #define LINK_FLIP_T 3
@@ -70,7 +80,7 @@ class IonoClass
   public:
     typedef void Callback(uint8_t pin, float value);
     IonoClass();
-#ifdef IONO_MKR
+#if defined(IONO_MKR) || defined(IONO_RP)
     void setBYP(uint8_t pin, bool value);
 #endif
     void setup();
@@ -82,6 +92,7 @@ class IonoClass
     void subscribeAnalog(uint8_t pin, unsigned long stableTime, float minVariation, Callback *callback);
     void linkDiDo(uint8_t dix, uint8_t dox, uint8_t mode, unsigned long stableTime);
     void process();
+    void serialTxEn(bool enabled);
 
   private:
     uint8_t _pinMap[21];

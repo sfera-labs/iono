@@ -23,10 +23,14 @@
 #include <EEPROM.h>
 #endif
 
+#ifdef IONO_RP
+#include "hardware/watchdog.h"
+#endif
+
 #define DELAY  25                           // the debounce delay in milliseconds
 #define BOOT_CONSOLE_TIMEOUT_MILLIS 15000   // if 5 consecutive spaces are received within this time interval after boot, enter console mode
 
-const PROGMEM char CONSOLE_MENU_HEADER[]  = {"=== Sfera Labs - Modbus RTU Slave configuration menu - v4.0 ==="};
+const PROGMEM char CONSOLE_MENU_HEADER[]  = {"=== Sfera Labs - Modbus RTU Slave configuration menu - v5.0 ==="};
 const PROGMEM char CONSOLE_MENU_CURRENT_CONFIG[]  = {"Print current configuration"};
 const PROGMEM char CONSOLE_MENU_SPEED[]  = {"Speed (baud)"};
 const PROGMEM char CONSOLE_MENU_PARITY[]  = {"Parity"};
@@ -37,7 +41,13 @@ const PROGMEM char CONSOLE_MENU_TYPE[]  = {"Type a menu number (0, 1, 2, 3, 4, 5
 const PROGMEM char CONSOLE_TYPE_SPEED[]  = {"Type serial port speed (1: 1200, 2: 2400, 3: 4800, 4: 9600; 5: 19200; 6: 38400, 7: 57600, 8: 115200): "};
 const PROGMEM char CONSOLE_TYPE_PARITY[]  = {"Type serial port parity (1: Even, 2: Odd, 3: None): "};
 const PROGMEM char CONSOLE_TYPE_ADDRESS[]  = {"Type Modbus device address (1-247): "};
+#ifdef IONO_ARDUINO
+#define IORULES_LEN 6
 const PROGMEM char CONSOLE_TYPE_MIRROR[]  = {"Type Input/Output rules (xxxxxx, F: follow, I: invert, H: flip on L>H transition, L: flip on H>L transition, T: flip on any transition, -: no rule): "};
+#else
+#define IORULES_LEN 4
+const PROGMEM char CONSOLE_TYPE_MIRROR[]  = {"Type Input/Output rules (xxxx, F: follow, I: invert, H: flip on L>H transition, L: flip on H>L transition, T: flip on any transition, -: no rule): "};
+#endif
 const PROGMEM char CONSOLE_TYPE_SAVE[]  = {"Confirm? (Y/N): "};
 const PROGMEM char CONSOLE_CURRENT_CONFIG[]  = {"Current configuration:"};
 const PROGMEM char CONSOLE_NEW_CONFIG[]  = {"New configuration:"};
@@ -64,12 +74,14 @@ char rulesCurrent[7];
 byte speedNew;
 byte parityNew;
 byte addressNew;
-char rulesNew[7];
+char rulesNew[IORULES_LEN + 1];
 
 Stream *consolePort = NULL;
 
 void setup() {
   bootTimeMillis = millis();
+
+  Iono.setup();
 
   SERIAL_PORT_HARDWARE.begin(9600);
   if ((int) &SERIAL_PORT_HARDWARE != (int) &SERIAL_PORT_MONITOR) {
@@ -96,14 +108,11 @@ void loop() {
       if (opMode == 0) {
         if (b == ' ') {
           if (spacesCounter >= 4) {
-#ifdef IONO_MKR
-            digitalWrite(PIN_TXEN, HIGH);
-#endif
+            delay(50);
+            Iono.serialTxEn(true);
             printConsoleMenu();
-#ifdef IONO_MKR
             consolePort->flush();
-            digitalWrite(PIN_TXEN, LOW);
-#endif
+            Iono.serialTxEn(false);
             opMode = 1;
           } else {
             spacesCounter++;
@@ -176,9 +185,7 @@ void setLink(char rule, uint8_t dix, uint8_t dox) {
 }
 
 void serialConsole(int b) {
-#ifdef IONO_MKR
-  digitalWrite(PIN_TXEN, HIGH);
-#endif
+  Iono.serialTxEn(true);
   delayMicroseconds(4000); // this is to let the console also work over the RS485 interface
   switch (consoleState) {
     case 0: // waiting for menu selection number
@@ -250,7 +257,7 @@ void serialConsole(int b) {
       }
       break;
     case 4: // rules
-      if (rulesEdit(consoleInputBuffer, rulesNew, b, 6)) {
+      if (rulesEdit(consoleInputBuffer, rulesNew, b, IORULES_LEN)) {
         consoleState = 0;
         consolePort->println();
         printConsoleMenu();
@@ -283,10 +290,8 @@ void serialConsole(int b) {
     default:
       break;
   }
-#ifdef IONO_MKR
   consolePort->flush();
-  digitalWrite(PIN_TXEN, LOW);
-#endif
+  Iono.serialTxEn(false);
 }
 
 boolean saveConfig() {
@@ -302,12 +307,12 @@ boolean writeEepromConfig(byte speed, byte parity, byte address, char *rules) {
     checksum ^= parity;
     EEPROM.write(2, address);
     checksum ^= address;
-    for (int a = 0; a < 6; a++) {
+    for (int a = 0; a < IORULES_LEN; a++) {
       EEPROM.write(a + 3, rules[a]);
       checksum ^= rules[a];
     }
     EEPROM.write(9, checksum);
-#ifdef ARDUINO_ARCH_SAMD
+#if defined(ARDUINO_ARCH_SAMD) || defined(IONO_RP)
     EEPROM.commit();
 #endif
     return true;
@@ -330,7 +335,7 @@ boolean readEepromConfig(byte *speedp, byte *parityp, byte *addressp, char *rule
   checksum ^= *parityp;
   *addressp = EEPROM.read(2);
   checksum ^= *addressp;
-  for (int a = 0; a < 6; a++) {
+  for (int a = 0; a < IORULES_LEN; a++) {
     rulesp[a] = EEPROM.read(a + 3);
     checksum ^= rulesp[a];
   }
@@ -338,6 +343,9 @@ boolean readEepromConfig(byte *speedp, byte *parityp, byte *addressp, char *rule
 }
 
 boolean getEEPROMConfig() {
+#ifdef IONO_RP
+  EEPROM.begin(256);
+#endif
   if (!readEepromConfig(&speedCurrent, &parityCurrent, &addressCurrent, rulesCurrent)) {
     speedCurrent = 0;
     parityCurrent = 0;
@@ -348,7 +356,10 @@ boolean getEEPROMConfig() {
 }
 
 void softReset() {
-#ifdef ARDUINO_ARCH_SAMD
+#ifdef IONO_RP
+  watchdog_enable(10, 1);
+  while (1);
+#elif defined(ARDUINO_ARCH_SAMD)
   NVIC_SystemReset();
 #else
   asm volatile ("  jmp 0");
@@ -450,7 +461,7 @@ boolean rulesEdit(char *buffer, char *value, int c, int size) {
       break;
     case 10: // newline
     case 13: // enter
-      if (strlen(buffer) == 6) {
+      if (strlen(buffer) == size) {
         strcpy(value, buffer);
         return true;
       } else {
