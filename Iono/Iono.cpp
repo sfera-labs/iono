@@ -38,91 +38,6 @@
 #define ANALOG_READ_MAX ((1 << ANALOG_READ_BITS) - 1)
 #define ANALOG_WRITE_MAX ((1 << ANALOG_WRITE_BITS) - 1)
 
-#ifdef IONO_ARDUINO
-  #define IONO_PIN_DO1 A4
-  #define IONO_PIN_DO2 A5
-  #define IONO_PIN_DO3 5
-  #define IONO_PIN_DO4 6
-  #define IONO_PIN_DO5 7
-  #define IONO_PIN_DO6 8
-
-  #define IONO_PIN_DI1 A0
-  #define IONO_PIN_AV1 A0
-  #define IONO_PIN_AI1 A0
-
-  #define IONO_PIN_DI2 A1
-  #define IONO_PIN_AV2 A1
-  #define IONO_PIN_AI2 A1
-
-  #define IONO_PIN_DI3 A2
-  #define IONO_PIN_AV3 A2
-  #define IONO_PIN_AI3 A2
-
-  #define IONO_PIN_DI4 A3
-  #define IONO_PIN_AV4 A3
-  #define IONO_PIN_AI4 A3
-
-  #define IONO_PIN_DI5 2
-  #define IONO_PIN_DI6 3
-  #define IONO_PIN_AO1 9
-#elif defined(IONO_RP)
-  #define IONO_PIN_DO1 13
-  #define IONO_PIN_DO2 12
-  #define IONO_PIN_DO3 11
-  #define IONO_PIN_DO4 11
-
-  #define IONO_PIN_DI1 26
-  #define IONO_PIN_AV1 26
-  #define IONO_PIN_AI1 26
-
-  #define IONO_PIN_DI2 27
-  #define IONO_PIN_AV2 27
-  #define IONO_PIN_AI2 27
-
-  #define IONO_PIN_DI3 28
-  #define IONO_PIN_AV3 28
-  #define IONO_PIN_AI3 28
-
-  #define IONO_PIN_DI4 29
-  #define IONO_PIN_AV4 29
-  #define IONO_PIN_AI4 29
-
-  #define IONO_PIN_DI5 24
-  #define IONO_PIN_DI6 23
-  #define IONO_PIN_DI5_BYP 7
-  #define IONO_PIN_DI6_BYP 6
-
-  #define IONO_PIN_AO1 8
-#else
-  #define IONO_PIN_DO1 3
-  #define IONO_PIN_DO2 2
-  #define IONO_PIN_DO3 A6
-  #define IONO_PIN_DO4 A5
-
-  #define IONO_PIN_DI1 A1
-  #define IONO_PIN_AV1 A1
-  #define IONO_PIN_AI1 A1
-
-  #define IONO_PIN_DI2 A2
-  #define IONO_PIN_AV2 A2
-  #define IONO_PIN_AI2 A2
-
-  #define IONO_PIN_DI3 A3
-  #define IONO_PIN_AV3 A3
-  #define IONO_PIN_AI3 A3
-
-  #define IONO_PIN_DI4 A4
-  #define IONO_PIN_AV4 A4
-  #define IONO_PIN_AI4 A4
-
-  #define IONO_PIN_DI5 7
-  #define IONO_PIN_DI6 5
-  #define IONO_PIN_DI5_BYP 0
-  #define IONO_PIN_DI6_BYP 1
-
-  #define IONO_PIN_AO1 A0
-#endif
-
 IonoClass::IonoClass() {
   _pinMap[DO1] = IONO_PIN_DO1;
   _pinMap[DO2] = IONO_PIN_DO2;
@@ -186,10 +101,10 @@ void IonoClass::setup() {
   serialTxEn(false);
 
 #ifdef IONO_RP
-  pinMode(17, INPUT);
-  pinMode(16, OUTPUT);
   IONO_RS485.setRX(17);
   IONO_RS485.setTX(16);
+  // Required for TX LED off
+  IONO_RS485.begin(9600);
 #endif
 
 #if defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_ARCH_MEGAAVR)
