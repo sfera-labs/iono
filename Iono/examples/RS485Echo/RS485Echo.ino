@@ -1,7 +1,7 @@
 /*
   RS485Echo.ino - Arduino sketch showing the use of the RS-485 interface.
 
-    Copyright (C) 2014-2020 Sfera Labs S.r.l. - All rights reserved.
+    Copyright (C) 2014-2021 Sfera Labs S.r.l. - All rights reserved.
 
     For information, see the iono web site:
     http://www.sferalabs.cc/iono
@@ -31,9 +31,9 @@ void setup() {
    * baud rate: 19200
    * data bits: 8
    * parity: none
-   * stop bits: 2
+   * stop bits: 1
    */
-  IONO_RS485.begin(19200, SERIAL_8N2);
+  IONO_RS485.begin(19200, SERIAL_8N1);
 }
 
 void loop() {
@@ -49,7 +49,7 @@ void loop() {
         delay(50);
       }
     }
-    
+
     Iono.serialTxEn(true);
 
     IONO_RS485.write(rxBuff, rxIdx);
@@ -57,6 +57,6 @@ void loop() {
 
     Iono.serialTxEn(false);
   }
-  
+
   delay(50);
 }
