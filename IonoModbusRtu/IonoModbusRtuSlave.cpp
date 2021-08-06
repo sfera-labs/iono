@@ -14,18 +14,19 @@
 */
 
 #include "IonoModbusRtuSlave.h"
+#ifndef IONO_RP
 #include <OneWire.h>
 #include <DallasTemperature.h>
-
-#ifdef IONO_MKR
-#define DO_MAX_INDEX 4
-#else
-#define DO_MAX_INDEX 6
 #endif
 
+#ifdef IONO_ARDUINO
+#define DO_MAX_INDEX 6
+#else
+#define DO_MAX_INDEX 4
+#endif
+
+#define VERSION 0x0500 // Version High - Version Low
 #define ANALOG_AVG_N 32
-#define ONE_WIRE_BUS_DI5 0
-#define ONE_WIRE_BUS_DI6 1
 #define ONE_WIRE_REQ_ITVL 10000
 
 bool IonoModbusRtuSlaveClass::_di1deb;
@@ -53,8 +54,9 @@ char IonoModbusRtuSlaveClass::_inMode[4] = {0, 0, 0, 0};
 
 ModbusRtuSlaveClass::Callback *IonoModbusRtuSlaveClass::_customCallback = NULL;
 
-OneWire oneWireDi5(ONE_WIRE_BUS_DI5);
-OneWire oneWireDi6(ONE_WIRE_BUS_DI6);
+#ifndef IONO_RP
+OneWire oneWireDi5(IONO_PIN_DI5_BYP);
+OneWire oneWireDi6(IONO_PIN_DI6_BYP);
 DallasTemperature sensorsDi5(&oneWireDi5);
 DallasTemperature sensorsDi6(&oneWireDi6);
 DeviceAddress sensorsAddressDi5[8];
@@ -63,6 +65,7 @@ int sensorsCountDi5 = -1;
 int sensorsCountDi6 = -1;
 unsigned long sensorsReqTsDi5;
 unsigned long sensorsReqTsDi6;
+#endif
 
 bool doTempEnabled[DO_MAX_INDEX];
 unsigned long doTempStart[DO_MAX_INDEX];
@@ -108,6 +111,7 @@ void IonoModbusRtuSlaveClass::setInputMode(int idx, char mode) {
 void IonoModbusRtuSlaveClass::process() {
   ModbusRtuSlave.process();
   Iono.process();
+#ifndef IONO_RP
   if (sensorsCountDi5 > 0 && millis() - sensorsReqTsDi5 > ONE_WIRE_REQ_ITVL) {
     sensorsDi5.requestTemperatures();
     sensorsReqTsDi5 = millis();
@@ -116,6 +120,7 @@ void IonoModbusRtuSlaveClass::process() {
     sensorsDi6.requestTemperatures();
     sensorsReqTsDi6 = millis();
   }
+#endif
   for (int i = 0; i < DO_MAX_INDEX; i++) {
     if (doTempEnabled[i] && millis() - doTempStart[i] > doTempTime[i]) {
       Iono.write(indexToDO(i + 1), LOW);
@@ -263,6 +268,7 @@ byte IonoModbusRtuSlaveClass::onRequest(byte unitAddr, byte function, word regAd
         ModbusRtuSlave.responseAddRegister(Iono.read(AO1) * 1000);
         return MB_RESP_OK;
       }
+#ifndef IONO_RP
       if (regAddr == 5000 && qty == 1) {
         sensorsDi5.begin();
         sensorsCountDi5 = sensorsDi5.getDeviceCount();
@@ -311,6 +317,7 @@ byte IonoModbusRtuSlaveClass::onRequest(byte unitAddr, byte function, word regAd
         }
         return MB_RESP_OK;
       }
+#endif
       return MB_EX_ILLEGAL_DATA_ADDRESS;
 
     case MB_FC_READ_INPUT_REGISTER:
@@ -360,6 +367,7 @@ byte IonoModbusRtuSlaveClass::onRequest(byte unitAddr, byte function, word regAd
         }
         return MB_RESP_OK;
       }
+#ifndef IONO_RP
       if (checkAddrRange(regAddr, qty, 5101, 5108)) {
         if (qty <= sensorsCountDi5) {
           for (int i = regAddr - 5101; i < regAddr - 5101 + qty; i++) {
@@ -377,8 +385,11 @@ byte IonoModbusRtuSlaveClass::onRequest(byte unitAddr, byte function, word regAd
           return MB_RESP_OK;
         }
       }
+#endif
       if (regAddr == 99 && qty == 1) {
-#ifdef IONO_MKR
+#ifdef IONO_RP
+        ModbusRtuSlave.responseAddRegister(0x30);
+#elif defined(IONO_MKR)
         ModbusRtuSlave.responseAddRegister(0x20);
 #else
         ModbusRtuSlave.responseAddRegister(0x10);
@@ -388,12 +399,14 @@ byte IonoModbusRtuSlaveClass::onRequest(byte unitAddr, byte function, word regAd
       if (regAddr == 64990 && qty == 4) {
         ModbusRtuSlave.responseAddRegister(0xCAFE); // fixed
         ModbusRtuSlave.responseAddRegister(0xBEAF); // fixed
-#ifdef IONO_MKR
+#ifdef IONO_RP
+        ModbusRtuSlave.responseAddRegister(0x3001); // Iono RP - App ID: Modbus RTU
+#elif defined(IONO_MKR)
         ModbusRtuSlave.responseAddRegister(0x2001); // Iono MKR - App ID: Modbus RTU
 #else
         ModbusRtuSlave.responseAddRegister(0x1001); // Iono Arduino - App ID: Modbus RTU
 #endif
-        ModbusRtuSlave.responseAddRegister(0x0400); // Version High - Version Low
+        ModbusRtuSlave.responseAddRegister(VERSION);
         return MB_RESP_OK;
       }
       return MB_EX_ILLEGAL_DATA_ADDRESS;
