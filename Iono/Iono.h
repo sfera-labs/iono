@@ -91,7 +91,7 @@
   #define IONO_PIN_DO1 13
   #define IONO_PIN_DO2 12
   #define IONO_PIN_DO3 11
-  #define IONO_PIN_DO4 11
+  #define IONO_PIN_DO4 10
 
   #define IONO_PIN_DI1 26
   #define IONO_PIN_AV1 26
