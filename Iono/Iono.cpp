@@ -112,6 +112,7 @@ void IonoClass::setup() {
   analogReference(EXTERNAL);
 #elif defined(IONO_RP)
   analogWriteResolution(ANALOG_WRITE_BITS);
+  analogWriteFreq(1000);
 #else
   analogReadResolution(ANALOG_READ_BITS);
   analogWriteResolution(ANALOG_WRITE_BITS);
