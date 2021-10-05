@@ -91,6 +91,17 @@ void IonoClass::setup() {
   pinMode(_pinMap[DI5], INPUT);
   pinMode(_pinMap[DI6], INPUT);
 
+#ifdef IONO_RP
+  gpio_disable_pulls(IONO_PIN_DI1);
+  gpio_disable_pulls(IONO_PIN_DI2);
+  gpio_disable_pulls(IONO_PIN_DI3);
+  gpio_disable_pulls(IONO_PIN_DI4);
+  gpio_disable_pulls(IONO_PIN_DI5);
+  gpio_disable_pulls(IONO_PIN_DI6);
+  gpio_disable_pulls(IONO_PIN_DI5_BYP);
+  gpio_disable_pulls(IONO_PIN_DI6_BYP);
+#endif
+
 #ifdef PIN_TXEN
   pinMode(PIN_TXEN, OUTPUT);
 #endif
