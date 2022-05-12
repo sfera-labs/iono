@@ -30,7 +30,7 @@
 #define DELAY  25                           // the debounce delay in milliseconds
 #define BOOT_CONSOLE_TIMEOUT_MILLIS 15000   // if 5 consecutive spaces are received within this time interval after boot, enter console mode
 
-const PROGMEM char CONSOLE_MENU_HEADER[]  = {"=== Sfera Labs - Modbus RTU Slave configuration menu - v5.0 ==="};
+const PROGMEM char CONSOLE_MENU_HEADER[]  = {"=== Sfera Labs - Modbus RTU Slave configuration menu - v6.0 ==="};
 const PROGMEM char CONSOLE_MENU_CURRENT_CONFIG[]  = {"Print current configuration"};
 const PROGMEM char CONSOLE_MENU_SPEED[]  = {"Speed (baud)"};
 const PROGMEM char CONSOLE_MENU_PARITY[]  = {"Parity"};
@@ -78,6 +78,8 @@ char rulesNew[IORULES_LEN + 1];
 
 Stream *consolePort = NULL;
 
+bool configReset = false;
+
 void setup() {
   bootTimeMillis = millis();
 
@@ -95,6 +97,11 @@ void setup() {
 void loop() {
   if (opMode == 2) {
     IonoModbusRtuSlave.process();
+
+    if (configReset) {
+      delay(1000);
+      softReset();
+    }
 
   } else {
     if (consolePort == NULL) {
@@ -148,6 +155,8 @@ void startModbus() {
       IonoModbusRtuSlave.begin(addressCurrent, SPEED_VALUE[speedCurrent], SERIAL_8E1, DELAY);
   }
 
+  IonoModbusRtuSlave.setCustomHandler(&modbusConfigHandler);
+
   if (rulesCurrent[0] != 0) {
     setLink(rulesCurrent[0], DI1, DO1);
     setLink(rulesCurrent[1], DI2, DO2);
@@ -160,6 +169,80 @@ void startModbus() {
   }
 
   opMode = 2;
+}
+
+byte modbusConfigHandler(byte unitAddr, byte function, word regAddr, word qty, byte *data) {
+  switch (function) {
+    case MB_FC_WRITE_MULTIPLE_REGISTERS:
+    case MB_FC_WRITE_SINGLE_REGISTER:
+      if (regAddr == 3000) {
+        word val = ModbusRtuSlave.getDataRegister(function, data, 0);
+        if (qty != 1 || val != 0xABCD) {
+          return MB_EX_ILLEGAL_DATA_VALUE;
+        }
+        if (saveConfig()) {
+          configReset = true;
+          return MB_RESP_OK;
+        } else {
+          return MB_EX_SERVER_DEVICE_FAILURE;
+        }
+      }
+      if (modbusCheckAddrRange(regAddr, qty, 3001, 3004 + IORULES_LEN - 1)) {
+        for (int i = regAddr; i < regAddr + qty; i++) {
+          word val = ModbusRtuSlave.getDataRegister(function, data, i - regAddr);
+          if (i == 3001) {
+            if (val < 1 || val > 247) {
+              return MB_EX_ILLEGAL_DATA_VALUE;
+            }
+            addressNew = val;
+          } else if (i == 3002) {
+            if (val < 1 || val > 8) {
+              return MB_EX_ILLEGAL_DATA_VALUE;
+            }
+            speedNew = val;
+          } else if (i == 3003) {
+            if (val < 1 || val > 3) {
+              return MB_EX_ILLEGAL_DATA_VALUE;
+            }
+            parityNew = val;
+          } else if (i >= 3004) {
+            if (val != '-' && val != 'F' && val != 'I' && val != 'H' && val != 'L' && val != 'T') {
+              return MB_EX_ILLEGAL_DATA_VALUE;
+            }
+            rulesNew[i - 3004] = val;
+          }
+        }
+        return MB_RESP_OK;
+      }
+      break;
+
+    case MB_FC_READ_HOLDING_REGISTERS:
+      if (modbusCheckAddrRange(regAddr, qty, 3001, 3004 + IORULES_LEN - 1)) {
+        for (int i = regAddr; i < regAddr + qty; i++) {
+          word val = ModbusRtuSlave.getDataRegister(function, data, i - regAddr);
+          if (i == 3001) {
+            ModbusRtuSlave.responseAddRegister(((addressNew == 0) ? addressCurrent : addressNew) & 0xff);
+          } else if (i == 3002) {
+            ModbusRtuSlave.responseAddRegister(((speedNew == 0) ? speedCurrent : speedNew) & 0xff);
+          } else if (i == 3003) {
+            ModbusRtuSlave.responseAddRegister(((parityNew == 0) ? parityCurrent : parityNew) & 0xff);
+          } else if (i >= 3004) {
+            ModbusRtuSlave.responseAddRegister(((rulesNew[i - 3004] == 0) ? rulesCurrent[i - 3004] : rulesNew[i - 3004]) & 0xff);
+          }
+        }
+        return MB_RESP_OK;
+      }
+      break;
+
+    default:
+      break;
+  }
+
+  return MB_RESP_PASS;
+}
+
+bool modbusCheckAddrRange(word regAddr, word qty, word min, word max) {
+  return regAddr >= min && regAddr <= max && regAddr + qty <= max + 1;
 }
 
 void setLink(char rule, uint8_t dix, uint8_t dox) {
@@ -295,7 +378,21 @@ void serialConsole(int b) {
 }
 
 boolean saveConfig() {
-  return writeEepromConfig((speedNew == 0) ? speedCurrent : speedNew, (parityNew == 0) ? parityCurrent : parityNew, (addressNew == 0) ? addressCurrent : addressNew, (rulesNew[0] == 0) ? rulesCurrent : rulesNew);
+  if (speedNew == 0) {
+    speedNew = speedCurrent;
+  }
+  if (parityNew == 0) {
+    parityNew = parityCurrent;
+  }
+  if (addressNew == 0) {
+    addressNew = addressCurrent;
+  }
+  for (int i = 0; i < IORULES_LEN; i++) {
+    if (rulesNew[i] == 0) {
+      rulesNew[i] = rulesCurrent[i];
+    }
+  }
+  return writeEepromConfig(speedNew, parityNew, addressNew, rulesNew);
 }
 
 boolean writeEepromConfig(byte speed, byte parity, byte address, char *rules) {
@@ -350,7 +447,9 @@ boolean getEEPROMConfig() {
     speedCurrent = 0;
     parityCurrent = 0;
     addressCurrent = 0;
-    rulesCurrent[0] = 0;
+    for (int i = 0; i < IORULES_LEN; i++) {
+      rulesCurrent[i] = '-';
+    }
   }
   return (speedCurrent != 0 && parityCurrent != 0 && addressCurrent != 0);
 }
