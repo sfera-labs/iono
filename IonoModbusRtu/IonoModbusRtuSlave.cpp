@@ -1,7 +1,7 @@
 /*
   IonoModbusRtuSlave.cpp - Modbus RTU Slave library for Iono Arduino and Iono MKR
 
-    Copyright (C) 2018-2021 Sfera Labs S.r.l. - All rights reserved.
+    Copyright (C) 2018-2022 Sfera Labs S.r.l. - All rights reserved.
 
     For information, see:
     https://www.sferalabs.cc/
@@ -18,6 +18,7 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #endif
+#include <Wiegand.h>
 
 #ifdef IONO_ARDUINO
 #define DO_MAX_INDEX 6
@@ -25,7 +26,7 @@
 #define DO_MAX_INDEX 4
 #endif
 
-#define VERSION 0x0500 // Version High - Version Low
+#define VERSION 0x0600 // Version High - Version Low
 #define ANALOG_AVG_N 32
 #define ONE_WIRE_REQ_ITVL 10000
 
@@ -70,6 +71,18 @@ unsigned long sensorsReqTsDi6;
 bool doTempEnabled[DO_MAX_INDEX];
 unsigned long doTempStart[DO_MAX_INDEX];
 unsigned long doTempTime[DO_MAX_INDEX];
+
+Wiegand wgnd(IONO_PIN_DI5_BYP, IONO_PIN_DI6_BYP);
+uint64_t wgndData;
+bool wgndInit = false;
+
+void wgndOnData0() {
+  wgnd.onData0();
+}
+
+void wgndOnData1() {
+  wgnd.onData1();
+}
 
 void IonoModbusRtuSlaveClass::begin(byte unitAddr, unsigned long baud, unsigned long config, unsigned long diDebounceTime) {
   Iono.setup();
@@ -386,6 +399,24 @@ byte IonoModbusRtuSlaveClass::onRequest(byte unitAddr, byte function, word regAd
         }
       }
 #endif
+      if (regAddr == 8001 && qty == 1) {
+        if (!wgndInit) {
+          wgnd.setup(wgndOnData0, wgndOnData1, false, 700, 2700, 10, 150);
+          wgndInit = true;
+        }
+        ModbusRtuSlave.responseAddRegister(wgnd.getData(&wgndData));
+        return MB_RESP_OK;
+      }
+      if (regAddr == 8002 && qty <= 4) {
+        for (int i = 0; i < qty; i++) {
+          ModbusRtuSlave.responseAddRegister((wgndData >> (i * 16)) & 0xffff);
+        }
+        return MB_RESP_OK;
+      }
+      if (regAddr == 8010 && qty == 1) {
+        ModbusRtuSlave.responseAddRegister(wgnd.getNoise());
+        return MB_RESP_OK;
+      }
       if (regAddr == 99 && qty == 1) {
 #ifdef IONO_RP
         ModbusRtuSlave.responseAddRegister(0x30);

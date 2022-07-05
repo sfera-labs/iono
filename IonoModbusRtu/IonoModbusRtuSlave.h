@@ -1,7 +1,7 @@
 /*
   IonoModbusRtuSlave.h - Modbus RTU Slave library for Iono Arduino and Iono MKR
 
-    Copyright (C) 2018-2021 Sfera Labs S.r.l. - All rights reserved.
+    Copyright (C) 2018-2022 Sfera Labs S.r.l. - All rights reserved.
 
     For information, see:
     https://www.sferalabs.cc/

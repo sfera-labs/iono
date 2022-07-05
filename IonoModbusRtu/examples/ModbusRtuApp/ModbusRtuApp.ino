@@ -1,7 +1,7 @@
 /*
   ModbusRtuApp.cpp - A configurable Modbus RTU Slave for Iono Uno, Iono MKR and Iono RP
 
-    Copyright (C) 2016-2021 Sfera Labs S.r.l. - All rights reserved.
+    Copyright (C) 2016-2022 Sfera Labs S.r.l. - All rights reserved.
 
     For information, see:
     https://www.sferalabs.cc/
