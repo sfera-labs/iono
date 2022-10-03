@@ -30,7 +30,7 @@
 
 #define MAX_SENSORS 20
 
-OneWire oneWire(DI6_BYP);
+OneWire oneWire(IONO_PIN_DI6_BYP);
 DallasTemperature sensors(&oneWire);
 
 DeviceAddress addrs[MAX_SENSORS];
