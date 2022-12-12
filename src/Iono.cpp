@@ -122,6 +122,7 @@ void IonoClass::setup() {
   // For Arduino UNO, Ethernet, Leonardo ETH and UNO WIFI REV2 to use the external 3.3V reference
   analogReference(EXTERNAL);
 #elif defined(IONO_RP)
+  analogReadResolution(ANALOG_READ_BITS);
   analogWriteResolution(ANALOG_WRITE_BITS);
   analogWriteFreq(1000);
 #else
