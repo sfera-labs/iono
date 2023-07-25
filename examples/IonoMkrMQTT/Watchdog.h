@@ -1,7 +1,7 @@
 /*
   Watchdog.h
 
-    Copyright (C) 2020-2022 Sfera Labs S.r.l. - All rights reserved.
+    Copyright (C) 2020-2023 Sfera Labs S.r.l. - All rights reserved.
 
     For information, see:
     https://www.sferalabs.cc/

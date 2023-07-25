@@ -1,7 +1,7 @@
 /*
   SerialConfig.h
 
-    Copyright (C) 2020-2022 Sfera Labs S.r.l. - All rights reserved.
+    Copyright (C) 2020-2023 Sfera Labs S.r.l. - All rights reserved.
 
     For information, see:
     https://www.sferalabs.cc/
@@ -202,7 +202,7 @@ void SerialConfig::_enterConsole() {
     delay(5);
   }
   while (true) {
-    _print("=== Sfera Labs - Iono MKR MQTT configuration - v1.0 ===\r\n"
+    _print("=== Sfera Labs - Iono MKR MQTT configuration - v1.1 ===\r\n"
            /* "\r\n    1. Configuration wizard" */
            "\r\n    1. Import configuration"
            "\r\n    2. Export configuration"

@@ -1,7 +1,7 @@
 /*
   IonoMkrMQTT.cpp
 
-    Copyright (C) 2020-2022 Sfera Labs S.r.l. - All rights reserved.
+    Copyright (C) 2020-2023 Sfera Labs S.r.l. - All rights reserved.
 
     For information, see:
     https://www.sferalabs.cc/
@@ -70,8 +70,6 @@ void setup() {
   lastUpdateSendTs = lastFullStateSendTs = millis();
   digitalWrite(LED_BUILTIN, LOW);
 
-  connectToWifi();
-
   // set the message receive callback
   mqttClient.onMessage(messageReceived);
 
@@ -91,6 +89,8 @@ void setup() {
   }
 
   setWillMessage();
+
+  Serial.println("Hello!");
 }
 
 // set a will message, used by the broker when the connection dies unexpectantly
@@ -105,32 +105,38 @@ void setWillMessage() {
 }
 
 void connectToWifi() {
-  // attempt to connect to Wifi network (blocks for about 2 secs)
-  unsigned long firstConnAttempt = millis();
-  while (WiFi.begin(SerialConfig.ssid, SerialConfig.netpass) != WL_CONNECTED) {
+  static unsigned long firstConnAttempt = millis();
+  if (WiFi.begin(SerialConfig.ssid, SerialConfig.netpass) != WL_CONNECTED) {
     Serial.print(".");
-    if (millis() - firstConnAttempt > 60000)
-      NVIC_SystemReset();
-    Watchdog.clear();
+    if (millis() - firstConnAttempt > 60000) {
+      WiFi.end();
+      Serial.print(" ");
+      firstConnAttempt = millis();
+    }
+  } else {
+    Serial.print("\nIP Address: ");
+    Serial.println(WiFi.localIP());
   }
-  Serial.println("connected to wifi network");
 }
 
 void connectToBroker() {
-  Watchdog.clear();
-  // attempt to connect to MQTT broker (blocks for about 10 secs)
-  int firstConnAttempt = millis();
-  while(!mqttClient.connect(SerialConfig.brokerAddr, atoi(SerialConfig.numPort))) {
+  static unsigned long firstConnAttempt = millis();
+  Serial.println("Connecting to MQTT broker...");
+  mqttClient.setConnectionTimeout(5000);
+  if (!mqttClient.connect(SerialConfig.brokerAddr, atoi(SerialConfig.numPort))) {
     Serial.print("MQTT connection failed! Error code = ");
     Serial.println(mqttClient.connectError());
-    if (millis() - firstConnAttempt > 60000)
-      NVIC_SystemReset();
-    Watchdog.clear();
+    if (millis() - firstConnAttempt > 60000) {
+      WiFi.end();
+      firstConnAttempt = millis();
+    }
+  } else {
+    // the MQTT broker doesn't memorize session info about this board,
+    // so every time there's a reconnection all subscriptions must be re-done
+    Serial.println("Subscribing...");
+    subscribeToAll();
+    Serial.println("Ready");
   }
-  Serial.println("connected to MQTT broker");
-  // the MQTT broker doesn't memorize session info about this board,
-  // so every time there's a reconnection all subscriptions must be re-done
-  subscribeToAll();
 }
 
 void subscribeToAll() {
@@ -142,40 +148,40 @@ void subscribeToAll() {
 }
 
 void loop() {
-
-  if (WiFi.status() == DISCONNECTED) {
-    Serial.println("disconnected from wifi network");
-    connectToWifi();
-  }
-
-  if (!mqttClient.connected()) {
-    connectToBroker();
-  }
-
   Iono.process();
 
-  unsigned long now = millis();
-  if (now - previousMillis >= 100) {
-    // poll() calls ping() every keepaliveinterval (default 60 secs) to allow the library to send MQTT keep alives.
-    // It also calls messageReceived if there are bytes to read. poll() takes about 1 millisec
-    mqttClient.poll();
-    previousMillis = now;
-  }
+  Watchdog.clear();
 
-  // periodically resend all input statuses
-  if (now - lastFullStateSendTs >= 15 * 60000 || now - lastUpdateSendTs >= 7 * 60000) {
-    sendState(true);
-    lastFullStateSendTs = now;
-  }
-  else if (needToSend) {
-    sendState(false);
+  if (WiFi.status() != WL_CONNECTED) {
+    connectToWifi();
+
+  } else if (!mqttClient.connected()) {
+    Watchdog.disable();
+    connectToBroker();
+    Watchdog.setup();
+
+  } else {
+    unsigned long now = millis();
+
+    if (now - previousMillis >= 100) {
+      // poll() calls ping() every keepaliveinterval (default 60 secs) to allow the library to send MQTT keep alives.
+      // It also calls messageReceived if there are bytes to read. poll() takes about 1 millisec
+      mqttClient.poll();
+      previousMillis = now;
+    }
+
+    // periodically resend all input statuses
+    if (now - lastFullStateSendTs >= 15 * 60000 || now - lastUpdateSendTs >= 7 * 60000) {
+      sendState(true);
+      lastFullStateSendTs = now;
+    } else if (needToSend) {
+      sendState(false);
+    }
   }
 
   if (SerialConfig.isAvailable) {
     SerialConfig.process();
   }
-
-  Watchdog.clear();
 }
 
 void send(int opt, int val, int i) {
@@ -324,6 +330,7 @@ void inputsCallback(uint8_t pin, float value) {
 
 void initialize() {
   Watchdog.setup();
+  Iono.setup();
 
   Iono.subscribeDigital(DO1, 0, &inputsCallback);
   Iono.subscribeDigital(DO2, 0, &inputsCallback);
