@@ -53,6 +53,7 @@ bool duplicate = false;
 bool retain;
 uint8_t qos;
 String topicAO1;
+bool watchdog;
 
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
@@ -64,6 +65,8 @@ void setup() {
 
   baseTopic = SerialConfig.rootTopic[0] == '\0' ? "/" : SerialConfig.rootTopic;
   topicAO1 = String(baseTopic + "ao1" + "/val" + '\0');
+
+  watchdog = SerialConfig.watchdog == 'T' ? true : false;
 
   initialize();
 
@@ -150,15 +153,15 @@ void subscribeToAll() {
 void loop() {
   Iono.process();
 
-  Watchdog.clear();
+  if (watchdog) {
+    Watchdog.clear();
+  }
 
   if (WiFi.status() != WL_CONNECTED) {
     connectToWifi();
 
   } else if (!mqttClient.connected()) {
-    Watchdog.disable();
     connectToBroker();
-    Watchdog.setup();
 
   } else {
     unsigned long now = millis();
@@ -329,7 +332,10 @@ void inputsCallback(uint8_t pin, float value) {
 }
 
 void initialize() {
-  Watchdog.setup();
+  if (watchdog) {
+    Watchdog.setup();
+  }
+
   Iono.setup();
 
   Iono.subscribeDigital(DO1, 0, &inputsCallback);

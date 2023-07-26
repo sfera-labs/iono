@@ -29,7 +29,6 @@ class SerialConfig {
     static Stream *_port;
     static short _spacesCounter;
     static char _inBuffer[64];
-    static int _fCntMemAddr;
 
     static void _close();
     static void _enterConsole();
@@ -45,20 +44,17 @@ class SerialConfig {
     static int _orFilter(int c, int idx, int p1, int p2);
     static bool _modesFilter(String s);
     static bool _rulesFilter(String s);
-    static void _printConfiguration(char* ssid, char* netpass, char* brokerAddr, char* numPort, char* modes, char* rules, char* keepAlive, char qos, char retain, char* willTopic, char* willPayload, char* clientId,
+    static void _printConfiguration(char* ssid, char* netpass, char* brokerAddr, char* numPort, char* modes, char* rules, char* keepAlive, char qos, char retain, char watchdog, char* willTopic, char* willPayload, char* clientId,
         char *username, char *password, char* rootTopic);
-    static void _confirmConfiguration(char* ssid, char* netpass, char* brokerAddr, char* numPort, char* modes, char* rules, char* keepAlive, char qos, char retain, char* willTopic, char* willPayload, char* clientId,
+    static void _confirmConfiguration(char* ssid, char* netpass, char* brokerAddr, char* numPort, char* modes, char* rules, char* keepAlive, char qos, char retain, char watchdog, char* willTopic, char* willPayload, char* clientId,
         char *username, char *password, char* rootTopic);
     static bool _readEepromConfig();
-    static bool _writeEepromConfig(char* ssid, char* netpass, char* brokerAddr, char* numPort, char* modes, char* rules, char* keepAlive, char qos, char retain, char* willTopic, char* willPayload, char* clientId,
+    static bool _writeEepromConfig(char* ssid, char* netpass, char* brokerAddr, char* numPort, char* modes, char* rules, char* keepAlive, char qos, char retain, char watchdog, char* willTopic, char* willPayload, char* clientId,
         char *username, char *password, char* rootTopic);
 
   public:
     static bool isConfigured;
     static bool isAvailable;
-
-    static uint32_t fCntUp;
-    static uint32_t fCntDown;
 
     static char ssid[101];
     static char netpass[101];
@@ -69,6 +65,7 @@ class SerialConfig {
     static char keepAlive[9];
     static char qos;
     static char retain;
+    static char watchdog;
     static char willTopic[101];
     static char willPayload[101];
     static char clientId[101];
@@ -78,20 +75,14 @@ class SerialConfig {
 
     static void setup();
     static void process();
-    static void writeFCntUp(uint32_t);
-    static void writeFCntDown(uint32_t);
 };
 
 bool SerialConfig::isConfigured = false;
 bool SerialConfig::isAvailable = true;
 
-uint32_t SerialConfig::fCntUp = 0;
-uint32_t SerialConfig::fCntDown = 0;
-
 Stream *SerialConfig::_port = NULL;
 short SerialConfig::_spacesCounter = 0;
 char SerialConfig::_inBuffer[64];
-int SerialConfig::_fCntMemAddr;
 
 char SerialConfig::ssid[101];
 char SerialConfig::netpass[101];
@@ -102,6 +93,7 @@ char SerialConfig::rules[5];
 char SerialConfig::keepAlive[9];
 char SerialConfig::qos;
 char SerialConfig::retain;
+char SerialConfig::watchdog;
 char SerialConfig::willTopic[101];
 char SerialConfig::willPayload[101];
 char SerialConfig::clientId[101];
@@ -139,6 +131,7 @@ void SerialConfig::setup() {
     keepAlive[l.length()] = '\0';
     qos = '1';
     retain = 'F';
+    watchdog = 'F';
     l = "will";
     l.toCharArray(willTopic, sizeof(willTopic));
     willTopic[l.length()] = '\0';
@@ -202,7 +195,7 @@ void SerialConfig::_enterConsole() {
     delay(5);
   }
   while (true) {
-    _print("=== Sfera Labs - Iono MKR MQTT configuration - v1.1 ===\r\n"
+    _print("=== Sfera Labs - Iono MKR MQTT configuration - v1.2 ===\r\n"
            /* "\r\n    1. Configuration wizard" */
            "\r\n    1. Import configuration"
            "\r\n    2. Export configuration"
@@ -244,6 +237,7 @@ bool SerialConfig::_importConfig() {
   char keepAliveNew[9] = {'6', '0', '\0'};
   char qosNew;
   char retainNew;
+  char watchdogNew;
   char willTopicNew[101];
   char willPayloadNew[101];
   char clientIdNew[101];
@@ -263,6 +257,7 @@ bool SerialConfig::_importConfig() {
   rulesNew[0] = '\0';
   qosNew = '0';
   retainNew = 'F';
+  watchdogNew = 'F';
   willTopicNew[0] = '\0';
   willPayloadNew[0] = '\0';
   clientIdNew[0] = '\0';
@@ -371,6 +366,15 @@ bool SerialConfig::_importConfig() {
         return false;
       retainNew = ret;
 
+    } else if (l.endsWith("watchdog")) {
+      if (!_consumeWhites())
+        return false;
+      f = _readNextField();
+      ret = f.charAt(0);
+      if (ret != 'T' && ret != 'F')
+        return false;
+      watchdogNew = ret;
+
     } else if (l.endsWith("willtopic")) {
       if (!_consumeWhites())
         return false;
@@ -441,8 +445,8 @@ bool SerialConfig::_importConfig() {
     return false;
   }
 
-  _confirmConfiguration(ssidNew, netpassNew, brokerAddrNew, numPortNew, modesNew, rulesNew, keepAliveNew, qosNew, retainNew, willTopicNew, willPayloadNew, clientIdNew,
-    usernameNew, passwordNew, rootTopicNew);
+  _confirmConfiguration(ssidNew, netpassNew, brokerAddrNew, numPortNew, modesNew, rulesNew, keepAliveNew, qosNew, retainNew, watchdogNew, willTopicNew, willPayloadNew,
+    clientIdNew, usernameNew, passwordNew, rootTopicNew);
 }
 
 // consume whitespaces
@@ -468,8 +472,8 @@ void SerialConfig::_exportConfig() {
     _print("\r\n*** Not configured ***\r\n\r\nExample:");
   }
   _print("\r\n");
-  _printConfiguration(ssid, netpass, brokerAddr, numPort, modes, rules, keepAlive, qos, retain, willTopic, willPayload, clientId,
-    username, password, rootTopic);
+  _printConfiguration(ssid, netpass, brokerAddr, numPort, modes, rules, keepAlive, qos, retain, watchdog, willTopic, willPayload,
+    clientId, username, password, rootTopic);
   _print("\r\n");
 }
 
@@ -573,8 +577,8 @@ void SerialConfig::_readEchoLine(int maxLen, bool returnOnMaxLen,
 }
 
 // write configuration on board memory
-bool SerialConfig::_writeEepromConfig(char* ssid, char* netpass, char* brokerAddr, char* numPort, char* modes, char* rules, char* keepAlive, char qos, char retain, char* willTopic, char* willPayload, char* clientId,
-    char *username, char *password, char* rootTopic) {
+bool SerialConfig::_writeEepromConfig(char* ssid, char* netpass, char* brokerAddr, char* numPort, char* modes, char* rules, char* keepAlive,
+    char qos, char retain, char watchdog, char* willTopic, char* willPayload, char* clientId, char *username, char *password, char* rootTopic) {
   byte checksum = 7;
   int a = 2;
 
@@ -628,6 +632,9 @@ bool SerialConfig::_writeEepromConfig(char* ssid, char* netpass, char* brokerAdd
   EEPROM.write(a++, retain);
   checksum ^= retain;
 
+  EEPROM.write(a++, watchdog);
+  checksum ^= watchdog;
+
   for (int i = 0; i < 100; i++) {
     EEPROM.write(a++, willTopic[i]);
     checksum ^= willTopic[i];
@@ -679,11 +686,6 @@ bool SerialConfig::_writeEepromConfig(char* ssid, char* netpass, char* brokerAdd
   EEPROM.write(0, a - 2);
   checksum ^= a - 2;
   EEPROM.write(1, checksum);
-
-  // fCntUp & fCntDown reset
-  for (int i = 0; i < 8; i++) {
-    EEPROM.write(a + i, 0);
-  }
 
   EEPROM.commit();
 
@@ -751,6 +753,8 @@ bool SerialConfig::_readEepromConfig() {
 
   retain = mem[a++];
 
+  watchdog = mem[a++];
+
   for (int i = 0; i < 100; i++) {
     willTopic[i] = mem[a++];
     if (willTopic[i] == '\0') {
@@ -791,20 +795,16 @@ bool SerialConfig::_readEepromConfig() {
       break;
   }
 
-  _fCntMemAddr = a + 2;
-  fCntUp = ((EEPROM.read(_fCntMemAddr) & 0xfful) << 24) + ((EEPROM.read(_fCntMemAddr + 1) & 0xfful) << 16) + ((EEPROM.read(_fCntMemAddr + 2) & 0xfful) << 8) + (EEPROM.read(_fCntMemAddr + 3) & 0xfful);
-  fCntDown = ((EEPROM.read(_fCntMemAddr + 4) & 0xfful) << 24) + ((EEPROM.read(_fCntMemAddr + 5) & 0xfful) << 16) + ((EEPROM.read(_fCntMemAddr + 6) & 0xfful) << 8) + (EEPROM.read(_fCntMemAddr + 7) & 0xfful);
-
   return true;
 }
 
 // check configuration arguments and save if correct
-void SerialConfig::_confirmConfiguration(char* ssid, char* netpass, char* brokerAddr, char* numPort, char* modes, char* rules, char* keepAlive, char qos, char retain, char* willTopic, char* willPayload, char* clientId,
-    char *username, char *password, char* rootTopic) {
+void SerialConfig::_confirmConfiguration(char* ssid, char* netpass, char* brokerAddr, char* numPort, char* modes, char* rules, char* keepAlive,
+    char qos, char retain, char watchdog, char* willTopic, char* willPayload, char* clientId, char *username, char *password, char* rootTopic) {
 
   _print("\r\nNew configuration:\r\n");
 
-  _printConfiguration(ssid, netpass, brokerAddr, numPort, modes, rules, keepAlive, qos, retain, willTopic, willPayload, clientId,
+  _printConfiguration(ssid, netpass, brokerAddr, numPort, modes, rules, keepAlive, qos, retain, watchdog, willTopic, willPayload, clientId,
     username, password, rootTopic);
 
   _print("\r\nConfirm? (Y/N):\r\n\r\n");
@@ -813,7 +813,8 @@ void SerialConfig::_confirmConfiguration(char* ssid, char* netpass, char* broker
     _readEchoLine(1, false, true, &_orFilter, 'Y', 'N');
     if (_inBuffer[0] == 'Y') {
       _print("\r\nSaving...");
-      _writeEepromConfig(ssid, netpass, brokerAddr, numPort, modes, rules, keepAlive, qos, retain, willTopic, willPayload, clientId, username, password, rootTopic);
+      _writeEepromConfig(ssid, netpass, brokerAddr, numPort, modes, rules, keepAlive, qos, retain, watchdog, willTopic, willPayload,
+          clientId, username, password, rootTopic);
       if (_readEepromConfig()) {
         _print("\r\nSaved!\r\nResetting... bye!\r\n\r\n");
         delay(1000);
@@ -828,8 +829,8 @@ void SerialConfig::_confirmConfiguration(char* ssid, char* netpass, char* broker
   } while (true);
 }
 
-void SerialConfig::_printConfiguration(char* ssid, char* netpass, char* brokerAddr, char* numPort, char* modes, char* rules, char* keepAlive, char qos, char retain, char* willTopic, char* willPayload, char* clientId,
-    char *username, char *password, char* rootTopic) {
+void SerialConfig::_printConfiguration(char* ssid, char* netpass, char* brokerAddr, char* numPort, char* modes, char* rules, char* keepAlive,
+    char qos, char retain, char watchdog, char* willTopic, char* willPayload, char* clientId, char *username, char *password, char* rootTopic) {
   _print("\r\nnetssid: ");
   _print(ssid);
   _print("\r\nnetpass: ");
@@ -860,6 +861,8 @@ void SerialConfig::_printConfiguration(char* ssid, char* netpass, char* brokerAd
   _print(password);
   _print("\r\nroottopic: ");
   _print(rootTopic);
+  _print("\r\nwatchdog: ");
+  _print(watchdog);
 
   _print("\r\n");
 }
