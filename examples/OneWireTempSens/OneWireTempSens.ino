@@ -1,7 +1,7 @@
 /*
   OneWireTempSens.ino - 1-Wire Dallas temperature sensors example
 
-    Copyright (C) 2022 Sfera Labs S.r.l. - All rights reserved.
+    Copyright (C) 2022-2025 Sfera Labs S.r.l. - All rights reserved.
 
     For information, see:
     https://www.sferalabs.cc/
@@ -41,7 +41,7 @@ void setup(void) {
   Iono.setup();
 
 #ifdef IONO_UNO
-  Iono.voltageWrite(AO1, 5000);
+  Iono.write(AO1, 5);
 #endif
 
   Serial.begin(9600);
