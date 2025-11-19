@@ -1,7 +1,7 @@
 /*
   IonoModbusRtuSlave.cpp - Modbus RTU Slave library for Iono Uno/MKR/RP
 
-    Copyright (C) 2018-2022 Sfera Labs S.r.l. - All rights reserved.
+    Copyright (C) 2018-2025 Sfera Labs S.r.l. - All rights reserved.
 
     For information, see:
     https://www.sferalabs.cc/
@@ -98,15 +98,15 @@ void wgndOnData1() {
 void IonoModbusRtuSlaveClass::begin(byte unitAddr, unsigned long baud, unsigned long config, unsigned long diDebounceTime) {
   Iono.setup();
 
-  SERIAL_PORT_HARDWARE.begin(baud, config);
+  IONO_RS485.begin(baud, config);
   ModbusRtuSlave.setCallback(&IonoModbusRtuSlaveClass::onRequest);
 
 #ifdef PIN_TXEN
-  ModbusRtuSlave.begin(unitAddr, &SERIAL_PORT_HARDWARE, baud, PIN_TXEN);
+  ModbusRtuSlave.begin(unitAddr, &IONO_RS485, baud, PIN_TXEN);
 #elif defined(PIN_TXEN_N)
-  ModbusRtuSlave.begin(unitAddr, &SERIAL_PORT_HARDWARE, baud, PIN_TXEN_N, true);
+  ModbusRtuSlave.begin(unitAddr, &IONO_RS485, baud, PIN_TXEN_N, true);
 #else
-  ModbusRtuSlave.begin(unitAddr, &SERIAL_PORT_HARDWARE, baud, 0);
+  ModbusRtuSlave.begin(unitAddr, &IONO_RS485, baud, 0);
 #endif
 
   if (_inMode[0] == 0 || _inMode[0] == 'D') {

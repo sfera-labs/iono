@@ -1,7 +1,7 @@
 /*
   Iono.h - Arduino library for Iono Uno/MKR/RP
 
-    Copyright (C) 2014-2022 Sfera Labs S.r.l. - All rights reserved.
+    Copyright (C) 2014-2025 Sfera Labs S.r.l. - All rights reserved.
 
     For information, see:
     https://www.sferalabs.cc/
@@ -22,7 +22,7 @@
 #include "WProgram.h"
 #endif
 
-#if defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_SAMD_ZERO) || defined(ARDUINO_AVR_UNO_WIFI_REV2)
+#if defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_SAMD_ZERO) || defined(ARDUINO_AVR_UNO_WIFI_REV2) || defined(ARDUINO_ARCH_RENESAS_UNO)
 #define IONO_ARDUINO 1
 #define IONO_UNO 1
 #elif defined(ARDUINO_ARCH_RP2040)
@@ -155,7 +155,13 @@
 
 #ifdef IONO_RP
 #define PIN_TXEN_N 25
+#endif
+
+#ifndef SERIAL_PORT_MONITOR
 #define SERIAL_PORT_MONITOR Serial
+#endif
+
+#ifndef SERIAL_PORT_HARDWARE
 #define SERIAL_PORT_HARDWARE Serial1
 #endif
 

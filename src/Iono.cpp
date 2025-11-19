@@ -15,18 +15,24 @@
 
 #include "Iono.h"
 
-#if defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_ARCH_MEGAAVR)
-#define ANALOG_READ_BITS 10
-#define ANALOG_WRITE_BITS 8
+#if defined(IONO_MKR) || defined(ARDUINO_SAMD_ZERO)
+#define ANALOG_READ_BITS 12
+#define ANALOG_WRITE_BITS 10
+#define ANALOG_SET_BITS 1
 #elif defined(IONO_RP)
 #define ANALOG_READ_BITS 12
 #define ANALOG_WRITE_BITS 16
+#define ANALOG_SET_BITS 1
+#elif defined(ARDUINO_ARCH_RENESAS_UNO)
+#define ANALOG_READ_BITS 14
+#define ANALOG_WRITE_BITS 12
+#define ANALOG_SET_BITS 1
 #else
-#define ANALOG_READ_BITS 12
-#define ANALOG_WRITE_BITS 10
+#define ANALOG_READ_BITS 10
+#define ANALOG_WRITE_BITS 8
 #endif
 
-#ifdef IONO_ARDUINO
+#ifdef IONO_UNO
 #define IONO_AV_MAX 10.0
 #define IONO_AI_MAX 20.0
 #else
@@ -78,7 +84,7 @@ void IonoClass::setup() {
   pinMode(_pinMap[DO2], OUTPUT);
   pinMode(_pinMap[DO3], OUTPUT);
   pinMode(_pinMap[DO4], OUTPUT);
-#ifdef IONO_ARDUINO
+#ifdef IONO_UNO
   pinMode(_pinMap[DO5], OUTPUT);
   pinMode(_pinMap[DO6], OUTPUT);
 #endif
@@ -118,16 +124,20 @@ void IonoClass::setup() {
   IONO_RS485.begin(9600);
 #endif
 
-#if defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_ARCH_MEGAAVR)
-  // For Arduino UNO, Ethernet, Leonardo ETH and UNO WIFI REV2 to use the external 3.3V reference
+// For boards with 5V logic level to use the external 3.3V reference
+#if defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_AVR_UNO_WIFI_REV2)
   analogReference(EXTERNAL);
-#elif defined(IONO_RP)
+#elif defined(ARDUINO_ARCH_RENESAS_UNO)
+  analogReference(AR_EXTERNAL);
+#endif
+
+#ifdef ANALOG_SET_BITS
   analogReadResolution(ANALOG_READ_BITS);
   analogWriteResolution(ANALOG_WRITE_BITS);
+#endif
+
+#ifdef IONO_RP
   analogWriteFreq(1000);
-#else
-  analogReadResolution(ANALOG_READ_BITS);
-  analogWriteResolution(ANALOG_WRITE_BITS);
 #endif
 
   write(AO1, 0);
@@ -428,7 +438,7 @@ float IonoClass::readAnalogAvg(uint8_t pin, int n) {
 }
 
 void IonoClass::write(uint8_t pin, float value) {
-  if (pin >= DO1 && pin <= DO6) {
+  if ((pin >= DO1 && pin <= DO6) || pin == DI5 || pin == DI6) {
     digitalWrite(_pinMap[pin], (int) value);
   }
 

@@ -1,7 +1,7 @@
 /*
   ModbusTcpServer.ino - A Modbus TCP server for Iono MKR WiFi and Iono Uno with Arduino WiFi/Ethernet
 
-    Copyright (C) 2016-2022 Sfera Labs S.r.l. - All rights reserved.
+    Copyright (C) 2016-2025 Sfera Labs S.r.l. - All rights reserved.
 
     For information, see:
     https://www.sferalabs.cc/
@@ -21,12 +21,16 @@
 
 #include <Iono.h>
 
-#if defined(IONO_MKR) || defined(ARDUINO_AVR_UNO_WIFI_REV2)
+#if defined(IONO_MKR) || defined(ARDUINO_AVR_UNO_WIFI_REV2) || defined(ARDUINO_UNOWIFIR4)
 #define IONO_WIFI 1
 #endif
 
 #ifdef IONO_WIFI
-  #include <WiFiNINA.h>
+  #ifdef ARDUINO_UNOWIFIR4
+    #include <WiFiS3.h>
+  #else
+    #include <WiFiNINA.h>
+  #endif
 #else
   #ifdef ARDUINO_AVR_LEONARDO_ETH
     #include <Ethernet2.h>
@@ -42,7 +46,7 @@
 #define DELAY  50            // the debounce delay in milliseconds
 #define MAX_SSID_PASS_LEN 30
 
-const PROGMEM char CONSOLE_MENU_HEADER[]  = {"=== Sfera Labs - Modbus TCP server configuration menu - v3.0 ==="};
+const PROGMEM char CONSOLE_MENU_HEADER[]  = {"=== Sfera Labs - Modbus TCP server configuration menu - v3.1 ==="};
 const PROGMEM char CONSOLE_MENU_CURRENT_CONFIG[]  = {"Print current configuration"};
 const PROGMEM char CONSOLE_MENU_MAC[]  = {"MAC address (Eth only)"};
 const PROGMEM char CONSOLE_MENU_IP[]  = {"IP address"};
@@ -75,7 +79,6 @@ char ssidCurrent[MAX_SSID_PASS_LEN + 1];
 char passCurrent[MAX_SSID_PASS_LEN + 1];
 char ssidNew[MAX_SSID_PASS_LEN + 1];
 char passNew[MAX_SSID_PASS_LEN + 1];
-int ledState;
 boolean clientAfterReset = false;
 unsigned long lastClientTs;
 #else
@@ -155,22 +158,25 @@ void loop() {
   // Modbus TCP server
   if (serverEnabled) {
 #ifdef IONO_WIFI
-    ledState = HIGH;
     if (consoleStream == NULL) {
       if (WiFi.status() == WL_CONNECTED) {
-        ledState = LOW;
-        if (clientAfterReset && millis() - lastClientTs >= 10000) {
+        digitalWrite(LED_BUILTIN, LOW);
+        if (clientAfterReset && millis() - lastClientTs >= 60000) {
           WiFi.end();
         }
       } else {
+        digitalWrite(LED_BUILTIN, HIGH);
+        server.end();  
+        consoleServer.end();
         WiFi.end();
         getNetConfigAndSet();
         server.begin();
         consoleServer.begin();
         clientAfterReset = false;
       }
+    } else {
+      digitalWrite(LED_BUILTIN, HIGH);
     }
-    digitalWrite(LED_BUILTIN, ledState);
 #endif
 
     if (consoleStream == NULL) {
@@ -871,7 +877,7 @@ boolean readEepromConfig(byte *maca, byte *ipa, byte *netmaska, byte *dnsa, byte
 }
 
 void softReset() {
-#ifdef ARDUINO_ARCH_SAMD
+#if defined(ARDUINO_ARCH_SAMD) || defined(ARDUINO_UNOWIFIR4)
   NVIC_SystemReset();
 #else
   asm volatile ("  jmp 0");
