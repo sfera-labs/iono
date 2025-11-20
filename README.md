@@ -6,6 +6,6 @@ Iono is a general-purpose, professional input/output module (a.k.a. PLC) based o
 
 Iono allows you to use your Arduino programming skills, and the vast amount of software available for it, not only for prototypes, but for professional, industrial applications where extreme reliability, ruggedness and compliance with directives for EMC, Electrical Safety and RoHS are required.
 
-Refer to the [Wiki](../../wiki) for usage details, examples and ready-to-use applications.
+Refer to the [Wiki](https://github.com/sfera-labs/iono/wiki) for usage details, examples and ready-to-use applications.
 
 For more info about Iono visit www.sferalabs.cc
